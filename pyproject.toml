@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "pgpack==0.3.0.0",
+    "pgpack==0.3.0.1",
     "psycopg>=3.2.9",
     "sqlparse>=0.5.3",
 ]
