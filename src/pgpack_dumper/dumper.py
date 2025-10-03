@@ -4,28 +4,41 @@ from io import (
 )
 from logging import Logger
 from types import MethodType
+from typing import (
+    Any,
+    Iterable,
+    Union
+)
 
+from pgcopylib import (
+    PGCopyReader,
+    PGCopyWriter,
+)
 from pgpack import (
     CompressionMethod,
     PGPackReader,
     PGPackWriter,
+    metadata_reader,
 )
 from psycopg import (
     Connection,
     Cursor,
 )
+from pandas import DataFrame as PdFrame
+from polars import DataFrame as PlFrame
 from sqlparse import format as sql_format
 
-from .copy import CopyBuffer
-from .connector import PGConnector
-from .errors import (
+from .common import (
+    CopyBuffer,
+    CopyReader,
+    DumperLogger,
+    PGConnector,
     PGPackDumperError,
     PGPackDumperReadError,
     PGPackDumperWriteError,
     PGPackDumperWriteBetweenError,
+    chunk_query,
 )
-from .logger import DumperLogger
-from .multiquery import chunk_query
 
 
 class PGPackDumper:
@@ -34,7 +47,7 @@ class PGPackDumper:
     def __init__(
         self,
         connector: PGConnector,
-        compression_method: CompressionMethod = CompressionMethod.LZ4,
+        compression_method: CompressionMethod = CompressionMethod.ZSTD,
         logger: Logger = DumperLogger(),
     ) -> None:
         """Class initialization."""
@@ -49,7 +62,7 @@ class PGPackDumper:
             self.logger = logger
             self.copy_buffer: CopyBuffer = CopyBuffer(self.cursor, self.logger)
         except Exception as error:
-            logger.error(error)
+            self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperError(error)
 
         self.version = (
@@ -94,13 +107,15 @@ class PGPackDumper:
             self.logger.info(
                 f"Execute query {part}/{total_prts}[copy method]"
             )
-            dump_method(*args, **kwargs)
+            result = dump_method(*args, **kwargs)
 
             if second_part:
                 for query in second_part:
                     part += 1
                     self.logger.info(f"Execute query {part}/{total_prts}")
                     cursor.execute(query)
+
+            return result
 
         return wrapper
 
@@ -132,6 +147,20 @@ class PGPackDumper:
         )
 
     @multiquery
+    def to_reader(
+        self,
+        query: str | None = None,
+        table_name: str | None = None,
+    ) -> PGCopyReader:
+        """Get stream from PostgreSQL/GreenPlum as PGCopyReader object."""
+
+        self.copy_buffer.query = query
+        self.copy_buffer.table_name = table_name
+        _, pgtypes, _ = metadata_reader(self.copy_buffer.metadata)
+        readerobj = CopyReader(self.copy_buffer.copy_to())
+        return PGCopyReader(readerobj, pgtypes)
+
+    @multiquery
     def read_dump(
         self,
         fileobj: BufferedWriter,
@@ -141,15 +170,20 @@ class PGPackDumper:
         """Read PGPack dump from PostgreSQL/GreenPlum."""
 
         try:
-            pgpack = PGPackWriter(fileobj, self.compression_method)
             self.copy_buffer.query = query
             self.copy_buffer.table_name = table_name
-            pgpack.write(
+            pgpack = PGPackWriter(
+                fileobj,
                 self.copy_buffer.metadata,
-                self.copy_buffer,
+                self.compression_method,
+            )
+            with self.copy_buffer.copy_to() as copy_to:
+                pgpack.from_bytes(bytes(data) for data in copy_to)
+            self.logger.info(
+                f"Read pgpack dump from {self.connector.host} done."
             )
         except Exception as error:
-            self.logger.error(error)
+            self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
 
     def write_dump(
@@ -158,15 +192,14 @@ class PGPackDumper:
         table_name: str,
     ) -> None:
         """Write PGPack dump into PostgreSQL/GreenPlum."""
+
         try:
-            fileobj.seek(0)
             pgpack = PGPackReader(fileobj)
-            pgpack.pgcopy_compressor.seek(0)
             self.copy_buffer.table_name = table_name
-            self.copy_buffer.copy_from(pgpack.pgcopy_compressor)
+            self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
         except Exception as error:
-            self.logger.error(error)
+            self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteError(error)
 
     @multiquery
@@ -175,19 +208,93 @@ class PGPackDumper:
         table_dest: str,
         table_src: str | None = None,
         query_src: str | None = None,
-        cursor_src: Cursor | None = None,
+        dumper_src: Union["PGPackDumper", object] = None,
     ) -> None:
         """Write from PostgreSQL/GreenPlum into PostgreSQL/GreenPlum."""
 
         try:
-            source_copy_buffer = self.make_buffer_obj(
-                cursor=cursor_src,
-                query=query_src,
-                table_name=table_src,
-            )
+            if not dumper_src:
+                connect = Connection.connect(**self.connector._asdict())
+                self.logger.info(
+                    f"Set new connection for host {self.connector.host}."
+                )
+                source_copy_buffer = CopyBuffer(
+                    connect.cursor(),
+                    self.logger,
+                    query_src,
+                    table_src,
+                )
+            elif dumper_src.__class__ is PGPackDumper:
+                source_copy_buffer = dumper_src.copy_buffer
+                source_copy_buffer.table_name = table_src
+                source_copy_buffer.query = query_src
+            else:
+                reader = dumper_src.to_reader(
+                    query=query_src,
+                    table_name=table_src,
+                )
+                dtype_data = reader.to_rows()
+                return self.from_rows(
+                    dtype_data=dtype_data,
+                    table_name=table_dest,
+                )
+
             self.copy_buffer.table_name = table_dest
             self.copy_buffer.copy_between(source_copy_buffer)
             self.connect.commit()
         except Exception as error:
-            self.logger.error(error)
+            self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)
+
+    def from_rows(
+        self,
+        dtype_data: Iterable[Any],
+        table_name: str,
+    ) -> None:
+        """Write from python iterable object
+        into PostgreSQL/GreenPlum table."""
+
+        self.copy_buffer.table_name = table_name
+        _, pgtypes, _ = metadata_reader(self.copy_buffer.metadata)
+        writer = PGCopyWriter(None, pgtypes)
+        self.copy_buffer.copy_from(writer.from_rows(dtype_data))
+        self.connect.commit()
+
+    def from_pandas(
+        self,
+        data_frame: PdFrame,
+        table_name: str,
+    ) -> None:
+        """Write from pandas.DataFrame into PostgreSQL/GreenPlum table."""
+
+        self.from_rows(
+            dtype_data=iter(data_frame.values),
+            table_name=table_name,
+        )
+
+    def from_polars(
+        self,
+        data_frame: PlFrame,
+        table_name: str,
+    ) -> None:
+        """Write from polars.DataFrame into PostgreSQL/GreenPlum table."""
+
+        self.from_rows(
+            dtype_data=data_frame.iter_rows(),
+            table_name=table_name,
+        )
+
+    def refresh(self) -> None:
+        """Refresh session."""
+
+        self.connect = Connection.connect(**self.connector._asdict())
+        self.cursor = self.connect.cursor()
+        self.copy_buffer.cursor = self.cursor
+        self.logger.info(f"Connection to host {self.connector.host} updated.")
+
+    def close(self) -> None:
+        """Close session."""
+
+        self.cursor.close()
+        self.connect.close()
+        self.logger.info(f"Connection to host {self.connector.host} closed.")

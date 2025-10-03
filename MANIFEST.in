@@ -1,1 +1,14 @@
-recursive-include pgpack_dumper *.sql
+include src/pgpack_dumper/common/queryes/*.sql
+include src/pgpack_dumper/common/*.pyx
+include src/pgpack_dumper/common/*.pxd
+recursive-include src/pgpack_dumper *.sql
+recursive-include src/pgpack_dumper *.pyx
+recursive-include src/pgpack_dumper *.pxd
+
+exclude src/pgpack_dumper/common/*.c
+recursive-exclude src/pgpack_dumper *.c
+
+exclude *.c
+exclude src/*.c
+exclude src/**/*.c
+global-exclude *.c

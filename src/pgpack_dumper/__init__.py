@@ -1,16 +1,18 @@
 """Library for read and write PGPack format between PostgreSQL and file."""
 
-from pgcopylib import PGCopy
+from pgcopylib import (
+    PGCopyReader,
+    PGCopyWriter,
+)
 from pgpack import (
     CompressionMethod,
     PGPackReader,
     PGPackWriter,
 )
 
-from .connector import PGConnector
-from .copy import CopyBuffer
-from .dumper import PGPackDumper
-from .errors import (
+from .common import (
+    PGConnector,
+    CopyBuffer,
     CopyBufferError,
     CopyBufferObjectError,
     CopyBufferTableNotDefined,
@@ -19,6 +21,7 @@ from .errors import (
     PGPackDumperWriteError,
     PGPackDumperWriteBetweenError,
 )
+from .dumper import PGPackDumper
 from .version import __version__
 
 
@@ -30,7 +33,8 @@ __all__ = (
     "CopyBufferObjectError",
     "CopyBufferTableNotDefined",
     "PGConnector",
-    "PGCopy",
+    "PGCopyReader",
+    "PGCopyWriter",
     "PGPackDumper",
     "PGPackDumperError",
     "PGPackDumperReadError",

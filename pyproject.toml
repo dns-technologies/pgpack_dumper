@@ -1,3 +1,40 @@
 [build-system]
-requires = ["setuptools >= 42.0.0"]
+requires = ["setuptools>=61.0", "wheel", "Cython>=3.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pgpack_dumper"
+version = "0.2.0.0"
+description = "Library for read and write PGPack format between PostgreSQL and file."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "0xMihalich", email = "bayanmobile87@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "pgpack==0.3.0.0",
+    "psycopg>=3.2.9",
+    "sqlparse>=0.5.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/0xMihalich/pgpack_dumper"
+Documentation = "https://github.com/0xMihalich/pgpack_dumper#readme"
+Repository = "https://github.com/0xMihalich/pgpack_dumper"
+Changelog = "https://github.com/0xMihalich/pgpack_dumper/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+packages = {find = {where = ["src"]}}
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+light_compressor = ["**/*.pyx", "**/*.pxd", "**/*.sql", "*.pxd", "*.pyd", "*.md", "*.txt", "*.sql"]

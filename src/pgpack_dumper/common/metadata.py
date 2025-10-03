@@ -1,7 +1,9 @@
 from psycopg import Cursor
 
-from .query_template import query_template
-from .random_name import random_name
+from .query import (
+    query_template,
+    random_name,
+)
 
 
 def read_metadata(

@@ -1,5 +1,14 @@
 # Version History
 
+## 0.2.0.0
+
+* Redistribute project directories
+* Add CopyReader class for read stream
+* Update requirements.txt
+* Change default compressor to ZSTD
+* Change CopyBuffer.copy_reader() function
+* Delete CopyBuffer read() & tell() functions
+
 ## 0.1.2.2
 
 * Hotfix root_dir() function

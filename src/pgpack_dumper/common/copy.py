@@ -1,4 +1,3 @@
-from io import BufferedReader
 from logging import Logger
 from typing import (
     Generator,
@@ -14,8 +13,10 @@ from .errors import (
     CopyBufferObjectError,
     CopyBufferTableNotDefined,
 )
-from .query_template import query_template
-from .search_object import search_object
+from .query import (
+    query_template,
+    search_object,
+)
 from .structs import PGObject
 from .metadata import read_metadata
 
@@ -56,7 +57,7 @@ class CopyBuffer:
 
         if not self.query and not self.table_name:
             error_msg = "Query or table not defined."
-            self.logger.error(error_msg)
+            self.logger.error(f"CopyBufferTableNotDefined: {error_msg}")
             raise CopyBufferTableNotDefined(error_msg)
 
         host = self.cursor.connection.info.host
@@ -70,7 +71,7 @@ class CopyBuffer:
             pg_object = PGObject[relkind]
             if not pg_object.is_readable:
                 error_msg = f"Read from {pg_object} not support."
-                self.logger.error(error_msg)
+                self.logger.error(f"CopyBufferObjectError: {error_msg}")
                 raise CopyBufferObjectError(error_msg)
             self.logger.info(f"Use method read from {pg_object}.")
             if not pg_object.is_readobject:
@@ -86,13 +87,13 @@ class CopyBuffer:
 
     def copy_from(
         self,
-        copyobj: BufferedReader,
+        copyobj: Iterator[bytes],
     ) -> None:
         """Write PGCopy dump into PostgreSQL."""
 
         if not self.table_name:
             error_msg = "Table not defined."
-            self.logger.error(error_msg)
+            self.logger.error(f"CopyBufferTableNotDefined: {error_msg}")
             raise CopyBufferTableNotDefined(error_msg)
 
         host = self.cursor.connection.info.host
@@ -101,8 +102,8 @@ class CopyBuffer:
         with self.cursor.copy(
             query_template("copy_from").format(table_name=self.table_name)
         ) as cp:
-            while chunk := copyobj.read(262_144):
-                cp.write(chunk)
+            for bytes_data in copyobj:
+                cp.write(bytes_data)
 
         self.logger.info(f"Write into {host}.{self.table_name} done.")
 
@@ -126,13 +127,14 @@ class CopyBuffer:
             with self.cursor.copy(
                 query_template("copy_from").format(table_name=self.table_name)
             ) as copy_from:
-                [copy_from.write(data) for data in copy_to]
+                for data in copy_to:
+                    copy_from.write(data)
             self.logger.info(
                 f"Copy {source_object} from {source_host}"
                 f"into {destination_host}.{self.table_name} done."
             )
 
-    def copy_reader(self, size: int = -1) -> Generator[bytes, None, None]:
+    def copy_reader(self) -> Generator[bytes, None, None]:
         """Read bytes from copy object."""
 
         host = self.cursor.connection.info.host
@@ -144,23 +146,6 @@ class CopyBuffer:
         with self.copy_to() as copy_object:
             for data in copy_object:
                 self.pos += len(data)
-                if size != -1 and self.pos >= size:
-                    try:
-                        end_pos = size % (self.pos - len(data))
-                    except ZeroDivisionError:
-                        end_pos = size
-                    yield data[:end_pos]
-                    break
-                yield data
+                yield bytes(data)
 
         self.logger.info(f"Read {source} from {host} done.")
-
-    def read(self, size: int = -1) -> bytes:
-        """Read bytes from copy object."""
-
-        return b"".join(self.copy_reader(size))
-
-    def tell(self) -> int:
-        """Get read size."""
-
-        return self.pos
