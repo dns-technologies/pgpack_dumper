@@ -23,7 +23,7 @@ connector = PGConnector(
 
 dumper = PGPackDumper(
     connector=connector,
-    compression_method=CompressionMethod.LZ4,  # or CompressionMethod.ZSTD or CompressionMethod.NONE
+    compression_method=CompressionMethod.ZSTD,  # or CompressionMethod.LZ4 or CompressionMethod.NONE
 )
 ```
 
@@ -160,7 +160,7 @@ Get info from my another repository https://github.com/0xMihalich/pgpack
 ### From pip
 
 ```bash
-pip install pgpack_dumper
+pip install pgpack-dumper
 ```
 
 ### From local directory
