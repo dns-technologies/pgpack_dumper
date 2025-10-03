@@ -96,8 +96,59 @@ dumper.write_between(
     table_dest,
     table_src,
     query_src,
-    dumper_src.cursor,
+    dumper_src,
 )
+```
+
+### Get stream object
+
+```python
+# you need define one of parameter query or table_name
+query = "select ..."  # some sql query
+table_name = "public.test_table"  # or some table
+reader = dumper.to_reader(query=query, table_name=table_name)
+print(reader)
+# <PostgreSQL/GreenPlum stream reader>
+# ┌─────────────────┬─────────────────┐
+# │ Column Name     │ PostgreSQL Type │
+# ╞═════════════════╪═════════════════╡
+# │ column1         │ date            │
+# │-----------------+-----------------│
+# │ column2         │ bpchar          │
+# │-----------------+-----------------│
+# │ column3         │ bpchar          │
+# └─────────────────┴─────────────────┘
+# Total columns: 3
+# Readed rows: 0
+```
+
+StreamReader has three methods available,
+but only one of the methods is available at a time within a single session.
+
+```python
+# read as python generator object
+reader.to_rows()
+# or read as pandas.DataFrame
+reader.to_pandas()
+# or read as polars.DataFrame
+reader.to_polars()
+```
+
+### Write from python objects into target table
+
+```python
+# some table for write data
+table_name = "public.test_table"
+dtype_data: Itarable[Any]
+pandas_frame: pandas.DataFrame
+polars_frame: polars.DataFrame
+
+# write from python object
+dumper.from_rows(dtype_data, table_name)
+# write from pandas.DataFrame
+dumper.from_pandas(pandas_frame, table_name)
+# write from polars.DataFrame
+dumper.from_polars(polars_frame, table_name)
 ```
 
 ### Open PGPack file format

@@ -15,6 +15,9 @@ cdef class CopyReader:
     cpdef bytes read(self, long long size):
         """Read from copy."""
 
+        if self.closed:
+            raise RuntimeError("Copy object already closed.")
+
         if size <= 0:
             return b""
 

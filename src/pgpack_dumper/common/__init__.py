@@ -19,6 +19,7 @@ from .query import (
     search_object,
 )
 from .reader import CopyReader
+from .stream import StreamReader
 from .structs import PGObject
 
 
@@ -35,6 +36,7 @@ __all__ = (
     "PGPackDumperReadError",
     "PGPackDumperWriteBetweenError",
     "PGPackDumperWriteError",
+    "StreamReader",
     "chunk_query",
     "query_path",
     "query_template",

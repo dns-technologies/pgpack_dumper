@@ -4,10 +4,17 @@
 
 * Redistribute project directories
 * Add CopyReader class for read stream
+* Add StreamReader class for read same as PGPack stream object
+* Add new method to_reader(query, table_name) for get StreamReader
+* Add new method from_rows(dtype_data, table_name) for write from python iterable object
+* Add new methods from_pandas(data_frame, table_name) & from_polars(data_frame, table_name)
+* Add new methods refresh() to refresh session & close() to close PGPackDumper
 * Update requirements.txt
+* Update README.md
 * Change default compressor to ZSTD
 * Change CopyBuffer.copy_reader() function
 * Delete CopyBuffer read() & tell() functions
+* Delete make_buffer_obj method
 
 ## 0.1.2.2
 

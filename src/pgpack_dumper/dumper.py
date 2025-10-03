@@ -10,10 +10,7 @@ from typing import (
     Union
 )
 
-from pgcopylib import (
-    PGCopyReader,
-    PGCopyWriter,
-)
+from pgcopylib import PGCopyWriter
 from pgpack import (
     CompressionMethod,
     PGPackReader,
@@ -30,13 +27,13 @@ from sqlparse import format as sql_format
 
 from .common import (
     CopyBuffer,
-    CopyReader,
     DumperLogger,
     PGConnector,
     PGPackDumperError,
     PGPackDumperReadError,
     PGPackDumperWriteError,
     PGPackDumperWriteBetweenError,
+    StreamReader,
     chunk_query,
 )
 
@@ -115,6 +112,7 @@ class PGPackDumper:
                     self.logger.info(f"Execute query {part}/{total_prts}")
                     cursor.execute(query)
 
+            self.refresh()
             return result
 
         return wrapper
@@ -125,40 +123,6 @@ class PGPackDumper:
         if not query:
             return
         return sql_format(sql=query, strip_comments=True).strip().strip(";")
-
-    def make_buffer_obj(
-        self,
-        cursor: Cursor | None = None,
-        query: str | None = None,
-        table_name: str | None = None,
-    ) -> CopyBuffer:
-        """Make new buffer object for read."""
-
-        cursor = cursor or Connection.connect(
-            **self.connector._asdict()
-        ).cursor()
-        host = cursor.connection.info.host
-        self.logger.info(f"Make new cursor object for host {host}.")
-
-        return CopyBuffer(
-            cursor,
-            query,
-            table_name,
-        )
-
-    @multiquery
-    def to_reader(
-        self,
-        query: str | None = None,
-        table_name: str | None = None,
-    ) -> PGCopyReader:
-        """Get stream from PostgreSQL/GreenPlum as PGCopyReader object."""
-
-        self.copy_buffer.query = query
-        self.copy_buffer.table_name = table_name
-        _, pgtypes, _ = metadata_reader(self.copy_buffer.metadata)
-        readerobj = CopyReader(self.copy_buffer.copy_to())
-        return PGCopyReader(readerobj, pgtypes)
 
     @multiquery
     def read_dump(
@@ -198,6 +162,7 @@ class PGPackDumper:
             self.copy_buffer.table_name = table_name
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
+            self.refresh()
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteError(error)
@@ -242,9 +207,25 @@ class PGPackDumper:
             self.copy_buffer.table_name = table_dest
             self.copy_buffer.copy_between(source_copy_buffer)
             self.connect.commit()
+            self.refresh()
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)
+
+    @multiquery
+    def to_reader(
+        self,
+        query: str | None = None,
+        table_name: str | None = None,
+    ) -> StreamReader:
+        """Get stream from PostgreSQL/GreenPlum as StreamReader object."""
+
+        self.copy_buffer.query = query
+        self.copy_buffer.table_name = table_name
+        return StreamReader(
+            self.copy_buffer.metadata,
+            self.copy_buffer.copy_to(),
+        )
 
     def from_rows(
         self,
@@ -259,6 +240,7 @@ class PGPackDumper:
         writer = PGCopyWriter(None, pgtypes)
         self.copy_buffer.copy_from(writer.from_rows(dtype_data))
         self.connect.commit()
+        self.refresh()
 
     def from_pandas(
         self,
