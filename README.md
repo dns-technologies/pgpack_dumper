@@ -30,7 +30,7 @@ dumper = PGPackDumper(
 ### Read dump from PostgreSQL into file
 
 ```python
-file_name = "pgpack.lz4"
+file_name = "test_table.pgpack"
 # you need define one of parameter query or table_name
 query = "select ..."  # some sql query
 table_name = "public.test_table"  # or some table
@@ -46,7 +46,7 @@ with open(file_name, "wb") as fileobj:
 ### Write dump from file into PostgreSQL
 
 ```python
-file_name = "pgpack.lz4"
+file_name = "test_table.pgpack"
 # you need define one of parameter table_name
 table_name = "public.test_table"  # some table
 
