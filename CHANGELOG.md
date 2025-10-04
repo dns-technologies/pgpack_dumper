@@ -1,5 +1,11 @@
 # Version History
 
+## 0.2.0.1
+
+* Update requirements.txt depends pgpack==0.3.0.2
+* Fix multiquery decorator
+* Fix pgpack import
+
 ## 0.2.0.0
 
 * Redistribute project directories

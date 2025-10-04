@@ -81,7 +81,7 @@ class PGPackDumper:
             second_part: list[str]
 
             self: PGPackDumper = args[0]
-            cursor: Cursor = kwargs.get("cursor_src") or self.cursor
+            cursor: Cursor = kwargs.get("dumper_src", self).cursor
             query: str = kwargs.get("query_src") or kwargs.get("query")
             part: int = 1
             first_part, second_part = chunk_query(self.query_formatter(query))
