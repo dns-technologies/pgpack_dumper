@@ -1,5 +1,14 @@
 # Version History
 
+## 0.2.0.2
+
+* Update MANIFEST.in
+* Update requirements.txt depends pgpack==0.3.0.3
+* Improve pyproject.toml license file approve
+* Add CHANGELOG.md to pip package
+* Add close files after read/write operations
+* Change log messages for read operations
+
 ## 0.2.0.1
 
 * Update requirements.txt depends pgpack==0.3.0.2

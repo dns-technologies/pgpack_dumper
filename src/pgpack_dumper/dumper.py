@@ -102,7 +102,7 @@ class PGPackDumper:
                         break
 
             self.logger.info(
-                f"Execute query {part}/{total_prts}[copy method]"
+                f"Execute read {part}/{total_prts}[pgcopy mode]"
             )
             result = dump_method(*args, **kwargs)
 
@@ -146,6 +146,7 @@ class PGPackDumper:
             self.logger.info(
                 f"Read pgpack dump from {self.connector.host} done."
             )
+            pgpack.close()
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
@@ -162,6 +163,7 @@ class PGPackDumper:
             self.copy_buffer.table_name = table_name
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
+            pgpack.close()
             self.refresh()
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
@@ -199,10 +201,11 @@ class PGPackDumper:
                     table_name=table_src,
                 )
                 dtype_data = reader.to_rows()
-                return self.from_rows(
+                self.from_rows(
                     dtype_data=dtype_data,
                     table_name=table_dest,
                 )
+                return reader.close()
 
             self.copy_buffer.table_name = table_dest
             self.copy_buffer.copy_between(source_copy_buffer)
