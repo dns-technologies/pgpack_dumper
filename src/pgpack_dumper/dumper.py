@@ -51,12 +51,12 @@ class PGPackDumper:
 
         try:
             self.connector: PGConnector = connector
+            self.compression_method: CompressionMethod = compression_method
+            self.logger = logger
             self.connect: Connection = Connection.connect(
                 **self.connector._asdict()
             )
             self.cursor: Cursor = self.connect.cursor()
-            self.compression_method: CompressionMethod = compression_method
-            self.logger = logger
             self.copy_buffer: CopyBuffer = CopyBuffer(self.cursor, self.logger)
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
@@ -102,9 +102,9 @@ class PGPackDumper:
                         break
 
             self.logger.info(
-                f"Execute read {part}/{total_prts}[pgcopy mode]"
+                f"Execute stream {part}/{total_prts} [pgcopy mode]"
             )
-            result = dump_method(*args, **kwargs)
+            output = dump_method(*args, **kwargs)
 
             if second_part:
                 for query in second_part:
@@ -112,8 +112,10 @@ class PGPackDumper:
                     self.logger.info(f"Execute query {part}/{total_prts}")
                     cursor.execute(query)
 
-            self.refresh()
-            return result
+            if output:
+                self.refresh()
+
+            return output
 
         return wrapper
 
@@ -147,6 +149,7 @@ class PGPackDumper:
                 f"Read pgpack dump from {self.connector.host} done."
             )
             pgpack.close()
+            return True
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
@@ -210,7 +213,7 @@ class PGPackDumper:
             self.copy_buffer.table_name = table_dest
             self.copy_buffer.copy_between(source_copy_buffer)
             self.connect.commit()
-            self.refresh()
+            return True
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)

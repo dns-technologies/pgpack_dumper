@@ -1,5 +1,12 @@
 # Version History
 
+## 0.2.0.3
+
+* Change log message
+* Improve refresh database after write
+* Improve initialization error
+* Rename variable result to output
+
 ## 0.2.0.2
 
 * Update MANIFEST.in
