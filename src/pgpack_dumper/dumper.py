@@ -146,12 +146,16 @@ class PGPackDumper:
                 self.copy_buffer.metadata,
                 self.compression_method,
             )
+
             with self.copy_buffer.copy_to() as copy_to:
                 pgpack.from_bytes(bytes(data) for data in copy_to)
+
+            size = pgpack.tell()
+            pgpack.close()
+            self.logger.info(f"Successfully read {size} bytes.")
             self.logger.info(
                 f"Read pgpack dump from {self.connector.host} done."
             )
-            pgpack.close()
             return True
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
@@ -169,6 +173,8 @@ class PGPackDumper:
             self.copy_buffer.table_name = table_name
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
+            size = pgpack.tell()
+            self.logger.info(f"Successfully sending {size} bytes.")
             pgpack.close()
             self.refresh()
         except Exception as error:
@@ -211,6 +217,8 @@ class PGPackDumper:
                     dtype_data=dtype_data,
                     table_name=table_dest,
                 )
+                size = reader.tell()
+                self.logger.info(f"Successfully sending {size} bytes.")
                 return reader.close()
 
             self.copy_buffer.table_name = table_dest

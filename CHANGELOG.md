@@ -1,5 +1,10 @@
 # Version History
 
+## 0.2.0.5
+
+* Delete attribute pos from CopyBuffer
+* Add readed and sending size output into log
+
 ## 0.2.0.4
 
 * Update requirements.txt depends pgpack==0.3.0.4

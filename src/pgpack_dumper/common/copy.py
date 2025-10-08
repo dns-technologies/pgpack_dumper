@@ -36,7 +36,6 @@ class CopyBuffer:
         self.logger = logger
         self.query = query
         self.table_name = table_name
-        self.pos = 0
 
     @property
     def metadata(self) -> bytes:
@@ -97,14 +96,17 @@ class CopyBuffer:
             raise CopyBufferTableNotDefined(error_msg)
 
         host = self.cursor.connection.info.host
+        size = 0
         self.logger.info(f"Start write into {host}.{self.table_name}.")
 
         with self.cursor.copy(
             query_template("copy_from").format(table_name=self.table_name)
         ) as cp:
             for bytes_data in copyobj:
+                size += len(bytes_data)
                 cp.write(bytes_data)
 
+        self.logger.info(f"Successfully sending {size} bytes.")
         self.logger.info(f"Write into {host}.{self.table_name} done.")
 
     def copy_between(
@@ -120,15 +122,20 @@ class CopyBuffer:
                 copy_buffer.table_name,
                 copy_buffer.query,
             )
+            size = 0
             self.logger.info(
                 f"Copy {source_object} from {source_host} into "
                 f"{destination_host}.{self.table_name} started."
             )
+
             with self.cursor.copy(
                 query_template("copy_from").format(table_name=self.table_name)
             ) as copy_from:
                 for data in copy_to:
+                    size += len(data)
                     copy_from.write(data)
+
+            self.logger.info(f"Successfully sending {size} bytes.")
             self.logger.info(
                 f"Copy {source_object} from {source_host}"
                 f"into {destination_host}.{self.table_name} done."
@@ -145,7 +152,6 @@ class CopyBuffer:
 
         with self.copy_to() as copy_object:
             for data in copy_object:
-                self.pos += len(data)
                 yield bytes(data)
 
         self.logger.info(f"Read {source} from {host} done.")
