@@ -1,5 +1,10 @@
 # Version History
 
+## 0.2.0.6
+
+* Add tell() method to CopyReader
+* Update requirements.txt depends pgpack==0.3.0.5
+
 ## 0.2.0.5
 
 * Delete attribute pos from CopyBuffer

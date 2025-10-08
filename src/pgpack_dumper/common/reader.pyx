@@ -11,6 +11,7 @@ cdef class CopyReader:
         self.iterator = iter(self.copyobj.__enter__())
         self.bufferobj = bytearray()
         self.closed = False
+        self.total_read = 0
 
     cpdef bytes read(self, long long size):
         """Read from copy."""
@@ -23,6 +24,7 @@ cdef class CopyReader:
 
         cdef object chunk
         cdef Py_ssize_t buffer_len
+        cdef bytes result
 
         try:
             while len(self.bufferobj) < size:
@@ -31,6 +33,7 @@ cdef class CopyReader:
 
             result = bytes(self.bufferobj[:size])
             del self.bufferobj[:size]
+            self.total_read += len(result)
             return result
 
         except StopIteration:
@@ -44,8 +47,17 @@ cdef class CopyReader:
                 else:
                     result = bytes(self.bufferobj[:size])
                     del self.bufferobj[:size]
+                self.total_read += len(result)
                 return result
             return b""
+
+    cpdef long long tell(self):
+        """Return the current stream position."""
+
+        if self.closed:
+            raise RuntimeError("Copy object already closed.")
+
+        return self.total_read
 
     cpdef void close(self):
         """Close CopyReader."""
