@@ -1,5 +1,11 @@
 # Version History
 
+## 0.2.0.4
+
+* Update requirements.txt depends pgpack==0.3.0.4
+* Update requirements.txt depends psycopg==3.2.10
+* Fix logger create folder in initialize
+
 ## 0.2.0.3
 
 * Change log message

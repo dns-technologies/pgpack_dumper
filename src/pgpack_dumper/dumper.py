@@ -45,9 +45,12 @@ class PGPackDumper:
         self,
         connector: PGConnector,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
-        logger: Logger = DumperLogger(),
+        logger: Logger | None = None,
     ) -> None:
         """Class initialization."""
+
+        if not logger:
+            logger = DumperLogger()
 
         try:
             self.connector: PGConnector = connector
