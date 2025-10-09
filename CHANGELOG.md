@@ -1,5 +1,11 @@
 # Version History
 
+## 0.2.0.7
+
+* Update depends pgpack==0.3.0.6
+* Add depends psycopg_binary>=3.2.10
+* Add internal methods __read_dump, __write_between and __to_reader to force kwargs creation
+
 ## 0.2.0.6
 
 * Add tell() method to CopyReader

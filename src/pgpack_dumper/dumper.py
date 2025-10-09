@@ -130,13 +130,13 @@ class PGPackDumper:
         return sql_format(sql=query, strip_comments=True).strip().strip(";")
 
     @multiquery
-    def read_dump(
+    def __read_dump(
         self,
         fileobj: BufferedWriter,
-        query: str | None = None,
-        table_name: str | None = None,
-    ) -> None:
-        """Read PGPack dump from PostgreSQL/GreenPlum."""
+        query: str | None,
+        table_name: str | None,
+    ) -> bool:
+        """Internal method read_dump for generate kwargs to decorator."""
 
         try:
             self.copy_buffer.query = query
@@ -161,35 +161,15 @@ class PGPackDumper:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
 
-    def write_dump(
-        self,
-        fileobj: BufferedReader,
-        table_name: str,
-    ) -> None:
-        """Write PGPack dump into PostgreSQL/GreenPlum."""
-
-        try:
-            pgpack = PGPackReader(fileobj)
-            self.copy_buffer.table_name = table_name
-            self.copy_buffer.copy_from(pgpack.to_bytes())
-            self.connect.commit()
-            size = pgpack.tell()
-            self.logger.info(f"Successfully sending {size} bytes.")
-            pgpack.close()
-            self.refresh()
-        except Exception as error:
-            self.logger.error(f"{error.__class__.__name__}: {error}")
-            raise PGPackDumperWriteError(error)
-
     @multiquery
-    def write_between(
+    def __write_between(
         self,
         table_dest: str,
-        table_src: str | None = None,
-        query_src: str | None = None,
-        dumper_src: Union["PGPackDumper", object] = None,
-    ) -> None:
-        """Write from PostgreSQL/GreenPlum into PostgreSQL/GreenPlum."""
+        table_src: str | None,
+        query_src: str | None,
+        dumper_src: Union["PGPackDumper", object],
+    ) -> bool:
+        """Internal method write_between for generate kwargs to decorator."""
 
         try:
             if not dumper_src:
@@ -230,6 +210,70 @@ class PGPackDumper:
             raise PGPackDumperWriteBetweenError(error)
 
     @multiquery
+    def __to_reader(
+        self,
+        query: str | None,
+        table_name: str | None,
+    ) -> StreamReader:
+        """Internal method to_reader for generate kwargs to decorator."""
+
+        self.copy_buffer.query = query
+        self.copy_buffer.table_name = table_name
+        return StreamReader(
+            self.copy_buffer.metadata,
+            self.copy_buffer.copy_to(),
+        )
+
+    def read_dump(
+        self,
+        fileobj: BufferedWriter,
+        query: str | None = None,
+        table_name: str | None = None,
+    ) -> bool:
+        """Read PGPack dump from PostgreSQL/GreenPlum."""
+
+        return self.__read_dump(
+            fileobj=fileobj,
+            query=query,
+            table_name=table_name,
+        )
+
+    def write_dump(
+        self,
+        fileobj: BufferedReader,
+        table_name: str,
+    ) -> None:
+        """Write PGPack dump into PostgreSQL/GreenPlum."""
+
+        try:
+            pgpack = PGPackReader(fileobj)
+            self.copy_buffer.table_name = table_name
+            self.copy_buffer.copy_from(pgpack.to_bytes())
+            self.connect.commit()
+            size = pgpack.tell()
+            self.logger.info(f"Successfully sending {size} bytes.")
+            pgpack.close()
+            self.refresh()
+        except Exception as error:
+            self.logger.error(f"{error.__class__.__name__}: {error}")
+            raise PGPackDumperWriteError(error)
+
+    def write_between(
+        self,
+        table_dest: str,
+        table_src: str | None = None,
+        query_src: str | None = None,
+        dumper_src: Union["PGPackDumper", object] = None,
+    ) -> None:
+        """Write from PostgreSQL/GreenPlum into PostgreSQL/GreenPlum."""
+
+        return self.__write_between(
+            table_dest=table_dest,
+            table_src=table_src,
+            query_src=query_src,
+            dumper_src=dumper_src,
+        )
+
     def to_reader(
         self,
         query: str | None = None,
@@ -237,11 +281,9 @@ class PGPackDumper:
     ) -> StreamReader:
         """Get stream from PostgreSQL/GreenPlum as StreamReader object."""
 
-        self.copy_buffer.query = query
-        self.copy_buffer.table_name = table_name
-        return StreamReader(
-            self.copy_buffer.metadata,
-            self.copy_buffer.copy_to(),
+        return self.__to_reader(
+            query=query,
+            table_name=table_name,
         )
 
     def from_rows(
