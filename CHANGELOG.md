@@ -1,5 +1,12 @@
 # Version History
 
+## 0.2.1.0
+
+* Add *.pyi files for cython module descriptions
+* Update MANIFEST.in
+* Update depends pgpack==0.3.0.7
+* Update depends setuptools==80.9.0
+
 ## 0.2.0.7
 
 * Update depends pgpack==0.3.0.6

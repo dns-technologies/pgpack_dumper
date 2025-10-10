@@ -4,9 +4,11 @@ include LICENSE
 
 include src/pgpack_dumper/common/queryes/*.sql
 include src/pgpack_dumper/common/*.pyx
+include src/pgpack_dumper/common/*.pyi
 include src/pgpack_dumper/common/*.pxd
 recursive-include src/pgpack_dumper *.sql
 recursive-include src/pgpack_dumper *.pyx
+recursive-include src/pgpack_dumper *.pyi
 recursive-include src/pgpack_dumper *.pxd
 
 exclude src/pgpack_dumper/common/*.c

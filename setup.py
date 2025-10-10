@@ -27,6 +27,7 @@ setup(
             "**/*.sql",
             "*.pxd",
             "*.pyd",
+            "*.pyi",
             "*.md",
             "*.txt",
             "*.sql",
