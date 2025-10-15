@@ -45,12 +45,13 @@ jobs:
       run: python -m cibuildwheel --output-dir wheel_prebuild
       env:
         CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+        CIBW_ARCHS_WINDOWS: "AMD64"
+        CIBW_ARCHS_LINUX: "x86_64 aarch64"
         CIBW_ARCHS_MACOS: "x86_64 arm64"
         CIBW_ENVIRONMENT: "PYTHONPATH=$PYTHONPATH:$(python -c 'import site; print(\":\".join(site.getsitepackages()))')"
         CIBW_BEFORE_ALL: "pip install cython setuptools wheel -r requirements.txt"
         CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env"
         CIBW_SKIP: "*-win32 *-musllinux"
-        CIBW_ARCHS_WINDOWS: "AMD64"
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4
