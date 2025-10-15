@@ -32,7 +32,7 @@ jobs:
     - name: Install ONLY cibuildwheel dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install cython setuptools wheel nativelib
+        pip install cython setuptools wheel
       shell: bash
 
     - name: Install Rust
@@ -51,8 +51,6 @@ jobs:
         CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env"
         CIBW_SKIP: "*-win32 *-musllinux"
         CIBW_ARCHS_WINDOWS: "AMD64"
-        CIBW_ENVIRONMENT_WINDOWS: "PYTHONPATH=$PYTHONPATH:$(python -c 'import nativelib, os; print(os.path.dirname(nativelib.__file__))')"
-        CIBW_BEFORE_BUILD_WINDOWS: "pip install cython setuptools wheel nativelib && python -c \"import nativelib, os; print('nativelib path:', os.path.dirname(nativelib.__file__))\" && pip install -r requirements.txt"
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4
