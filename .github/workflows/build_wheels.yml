@@ -58,6 +58,9 @@ jobs:
         CIBW_BEFORE_ALL: "pip install cython setuptools wheel -r requirements.txt"
         CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env"
         CIBW_SKIP: "*-win32 *-musllinux*"
+        CIBW_PLATFORM_LINUX: "linux"
+        CIBW_PLATFORM_WINDOWS: "windows"
+        CIBW_PLATFORM_MACOS: "macos"
         CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
         CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_28"
 
