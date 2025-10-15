@@ -9,13 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  build_wheels:
-    name: Build wheels
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+  build_linux:
+    name: Build Linux wheels
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -42,38 +38,87 @@ jobs:
       shell: bash
 
     - name: Set up QEMU for ARM emulation
-      if: matrix.os == 'ubuntu-latest'
       uses: docker/setup-qemu-action@v3
       with:
         platforms: arm64
 
-    - name: Build wheels
-      run: python -m cibuildwheel --output-dir wheel_prebuild
+    - name: Build Linux wheels
+      run: python -m cibuildwheel --output-dir wheel_prebuild --platform linux
+      env:
+        CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+        CIBW_ARCHS_LINUX: "x86_64 aarch64"
+        CIBW_BEFORE_ALL: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && pip install cython setuptools wheel -r requirements.txt"
+        CIBW_SKIP: "*-musllinux*"
+
+    - name: Upload Linux wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-wheels
+        path: wheel_prebuild/*.whl
+
+  build_windows:
+    name: Build Windows wheels
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install cibuildwheel
+      run: pip install cibuildwheel
+
+    - name: Build Windows wheels
+      run: python -m cibuildwheel --output-dir wheel_prebuild --platform windows
       env:
         CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
         CIBW_ARCHS_WINDOWS: "AMD64"
-        CIBW_ARCHS_LINUX: "x86_64 aarch64"
-        CIBW_ARCHS_MACOS: "x86_64 arm64"
-        CIBW_ENVIRONMENT: "PYTHONPATH=$PYTHONPATH:$(python -c 'import site; print(\":\".join(site.getsitepackages()))')"
         CIBW_BEFORE_ALL: "pip install cython setuptools wheel -r requirements.txt"
-        CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env"
-        CIBW_SKIP: "*-win32 *-musllinux*"
-        CIBW_PLATFORM_LINUX: "linux"
-        CIBW_PLATFORM_WINDOWS: "windows"
-        CIBW_PLATFORM_MACOS: "macos"
-        CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
-        CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_28"
+        CIBW_SKIP: "*-win32"
 
-    - name: Upload wheels
+    - name: Upload Windows wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels-${{ matrix.os }}
+        name: windows-wheels
+        path: wheel_prebuild/*.whl
+
+  build_macos:
+    name: Build macOS wheels
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install cibuildwheel
+      run: pip install cibuildwheel
+
+    - name: Build macOS wheels
+      run: python -m cibuildwheel --output-dir wheel_prebuild --platform macos
+      env:
+        CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+        CIBW_ARCHS_MACOS: "x86_64 arm64"
+        CIBW_BEFORE_ALL: "pip install cython setuptools wheel -r requirements.txt"
+
+    - name: Upload macOS wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-wheels
         path: wheel_prebuild/*.whl
 
   create_release:
     name: Create Release with wheels
     runs-on: ubuntu-latest
-    needs: build_wheels
+    needs: [build_linux, build_windows, build_macos]
     if: startsWith(github.ref, 'refs/tags/')
     
     steps:
