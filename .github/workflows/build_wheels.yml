@@ -54,7 +54,6 @@ jobs:
         CIBW_ARCHS_WINDOWS: "AMD64"
         CIBW_ARCHS_LINUX: "x86_64 aarch64"
         CIBW_ARCHS_MACOS: "x86_64 arm64"
-        CIBW_CONTAINER_ENGINE: "docker"
         CIBW_ENVIRONMENT: "PYTHONPATH=$PYTHONPATH:$(python -c 'import site; print(\":\".join(site.getsitepackages()))')"
         CIBW_BEFORE_ALL: "pip install cython setuptools wheel -r requirements.txt"
         CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env"
