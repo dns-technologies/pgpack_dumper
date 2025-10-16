@@ -35,6 +35,7 @@ from .common import (
     PGPackDumperWriteBetweenError,
     StreamReader,
     chunk_query,
+    query_template,
 )
 
 
@@ -65,10 +66,18 @@ class PGPackDumper:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperError(error)
 
+        self.cursor.execute(query_template("dbname"))
+        self.dbname = self.cursor.fetchone()[0]
         self.version = (
             f"{self.connect.info.server_version // 10000}."
             f"{self.connect.info.server_version % 1000}"
         )
+
+        if self.dbname == "greenplum":
+            self.cursor.execute(query_template("gpversion"))
+            gpversion = self.cursor.fetchone()[0]
+            self.version = f"{self.version}|greenplum {gpversion}"
+
         self.logger.info(
             f"PGPackDumper initialized for host {self.connector.host}"
             f"[version {self.version}]"

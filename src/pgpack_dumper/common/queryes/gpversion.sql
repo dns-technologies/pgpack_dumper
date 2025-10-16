@@ -1,0 +1,1 @@
+select substring(version() from 'Greenplum Database (.*?) build') as gp_version;

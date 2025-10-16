@@ -1,5 +1,11 @@
 # Version History
 
+## 0.2.1.2
+
+* Add dbname.sql & gpversion.sql to queryes directory
+* Add PGPackDumper.dbname attribute to detect greenplum or postgres
+* Change PGPackDumper.version to "version number|greenplum version number" if greenplum detected
+
 ## 0.2.1.1
 
 * Add wheels automake
