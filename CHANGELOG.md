@@ -1,5 +1,10 @@
 # Version History
 
+## 0.2.1.1
+
+* Add wheels automake
+* Update depends pgpack==0.3.0.8
+
 ## 0.2.1.0
 
 * Add *.pyi files for cython module descriptions
