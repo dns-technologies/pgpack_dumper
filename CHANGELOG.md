@@ -1,5 +1,17 @@
 # Version History
 
+## 0.3.0.0
+
+* Update depends pgpack==0.3.0.9
+* Update depends psycopg==3.2.11
+* Change PGPackDumper.version to "*version number* gp *version number*" if greenplum detected
+* Fix calc read size
+* Fix multiquery wrapper
+* Add transfer_diagram and DBMetadata to make log diagrams
+* Add _dbmeta and _size attributes
+* Add log output diagram
+* Add auto upload to pip
+
 ## 0.2.1.2
 
 * Add dbname.sql & gpversion.sql to queryes directory

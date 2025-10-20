@@ -1,5 +1,13 @@
+"""Common functions and classes."""
+
+from .columns import make_columns
 from .connector import PGConnector
 from .copy import CopyBuffer
+from .diagram import (
+    DBMetadata,
+    format_table,
+    transfer_diagram,
+)
 from .errors import (
     CopyBufferError,
     CopyBufferObjectError,
@@ -29,6 +37,7 @@ __all__ = (
     "CopyBufferObjectError",
     "CopyBufferTableNotDefined",
     "CopyReader",
+    "DBMetadata",
     "DumperLogger",
     "PGConnector",
     "PGObject",
@@ -38,9 +47,12 @@ __all__ = (
     "PGPackDumperWriteError",
     "StreamReader",
     "chunk_query",
+    "format_table",
+    "make_columns",
     "query_path",
     "query_template",
     "random_name",
     "read_metadata",
     "search_object",
+    "transfer_diagram",
 )

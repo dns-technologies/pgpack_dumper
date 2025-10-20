@@ -1,3 +1,5 @@
+from collections import OrderedDict
+from collections.abc import Generator
 from io import (
     BufferedReader,
     BufferedWriter,
@@ -7,7 +9,8 @@ from types import MethodType
 from typing import (
     Any,
     Iterable,
-    Union
+    Iterator,
+    Union,
 )
 
 from pgcopylib import PGCopyWriter
@@ -19,6 +22,7 @@ from pgpack import (
 )
 from psycopg import (
     Connection,
+    Copy,
     Cursor,
 )
 from pandas import DataFrame as PdFrame
@@ -27,6 +31,7 @@ from sqlparse import format as sql_format
 
 from .common import (
     CopyBuffer,
+    DBMetadata,
     DumperLogger,
     PGConnector,
     PGPackDumperError,
@@ -35,7 +40,9 @@ from .common import (
     PGPackDumperWriteBetweenError,
     StreamReader,
     chunk_query,
+    make_columns,
     query_template,
+    transfer_diagram,
 )
 
 
@@ -62,6 +69,8 @@ class PGPackDumper:
             )
             self.cursor: Cursor = self.connect.cursor()
             self.copy_buffer: CopyBuffer = CopyBuffer(self.cursor, self.logger)
+            self._dbmeta: DBMetadata | None = None
+            self._size = 0
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperError(error)
@@ -76,7 +85,7 @@ class PGPackDumper:
         if self.dbname == "greenplum":
             self.cursor.execute(query_template("gpversion"))
             gpversion = self.cursor.fetchone()[0]
-            self.version = f"{self.version}|greenplum {gpversion}"
+            self.version = f"{self.version} gp {gpversion}"
 
         self.logger.info(
             f"PGPackDumper initialized for host {self.connector.host}"
@@ -93,7 +102,7 @@ class PGPackDumper:
             second_part: list[str]
 
             self: PGPackDumper = args[0]
-            cursor: Cursor = kwargs.get("dumper_src", self).cursor
+            cursor: Cursor = (kwargs.get("dumper_src") or self).cursor
             query: str = kwargs.get("query_src") or kwargs.get("query")
             part: int = 1
             first_part, second_part = chunk_query(self.query_formatter(query))
@@ -147,21 +156,45 @@ class PGPackDumper:
     ) -> bool:
         """Internal method read_dump for generate kwargs to decorator."""
 
+        def __read_data(
+            copy_to: Iterator[Copy],
+        ) -> Generator[bytes, None, None]:
+            """Generate bytes from copy object with calc size."""
+
+            self._size = 0
+
+            for data in copy_to:
+                chunk = bytes(data)
+                self._size += len(chunk)
+                yield chunk
+
         try:
             self.copy_buffer.query = query
             self.copy_buffer.table_name = table_name
+            metadata = self.copy_buffer.metadata
             pgpack = PGPackWriter(
                 fileobj,
-                self.copy_buffer.metadata,
+                metadata,
                 self.compression_method,
             )
+            columns = make_columns(*metadata_reader(metadata))
+            source = DBMetadata(
+                name=self.dbname,
+                version=self.version,
+                columns=columns,
+            )
+            destination = DBMetadata(
+                name="file",
+                version=fileobj.name,
+                columns=columns,
+            )
+            self.logger.info(transfer_diagram(source, destination))
 
             with self.copy_buffer.copy_to() as copy_to:
-                pgpack.from_bytes(bytes(data) for data in copy_to)
+                pgpack.from_bytes(__read_data(copy_to))
 
-            size = pgpack.tell()
             pgpack.close()
-            self.logger.info(f"Successfully read {size} bytes.")
+            self.logger.info(f"Successfully read {self._size} bytes.")
             self.logger.info(
                 f"Read pgpack dump from {self.connector.host} done."
             )
@@ -192,10 +225,14 @@ class PGPackDumper:
                     query_src,
                     table_src,
                 )
+                src_dbname = self.dbname
+                src_version = self.version
             elif dumper_src.__class__ is PGPackDumper:
                 source_copy_buffer = dumper_src.copy_buffer
                 source_copy_buffer.table_name = table_src
                 source_copy_buffer.query = query_src
+                src_dbname = dumper_src.dbname
+                src_version = dumper_src.version
             else:
                 reader = dumper_src.to_reader(
                     query=query_src,
@@ -205,12 +242,28 @@ class PGPackDumper:
                 self.from_rows(
                     dtype_data=dtype_data,
                     table_name=table_dest,
+                    source=dumper_src._dbmeta,
                 )
                 size = reader.tell()
                 self.logger.info(f"Successfully sending {size} bytes.")
                 return reader.close()
 
             self.copy_buffer.table_name = table_dest
+            source = DBMetadata(
+                name=src_dbname,
+                version=src_version,
+                columns=make_columns(
+                    *metadata_reader(source_copy_buffer.metadata),
+                ),
+            )
+            destination = DBMetadata(
+                name=self.dbname,
+                version=self.version,
+                columns=make_columns(
+                    *metadata_reader(self.copy_buffer.metadata),
+                ),
+            )
+            self.logger.info(transfer_diagram(source, destination))
             self.copy_buffer.copy_between(source_copy_buffer)
             self.connect.commit()
             return True
@@ -228,8 +281,16 @@ class PGPackDumper:
 
         self.copy_buffer.query = query
         self.copy_buffer.table_name = table_name
+        metadata = self.copy_buffer.metadata
+        self._dbmeta = DBMetadata(
+            name=self.dbname,
+            version=self.version,
+            columns=make_columns(
+                *metadata_reader(metadata),
+            ),
+        )
         return StreamReader(
-            self.copy_buffer.metadata,
+            metadata,
             self.copy_buffer.copy_to(),
         )
 
@@ -255,12 +316,27 @@ class PGPackDumper:
         """Write PGPack dump into PostgreSQL/GreenPlum."""
 
         try:
-            pgpack = PGPackReader(fileobj)
             self.copy_buffer.table_name = table_name
+            pgpack = PGPackReader(fileobj)
+            source = DBMetadata(
+                name="file",
+                version=fileobj.name,
+                columns=make_columns(
+                    pgpack.columns,
+                    pgpack.pgtypes,
+                    pgpack.pgparam,
+                ),
+            )
+            destination = DBMetadata(
+                name=self.dbname,
+                version=self.version,
+                columns=make_columns(
+                    *metadata_reader(self.copy_buffer.metadata),
+                ),
+            )
+            self.logger.info(transfer_diagram(source, destination))
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
-            size = pgpack.tell()
-            self.logger.info(f"Successfully sending {size} bytes.")
             pgpack.close()
             self.refresh()
         except Exception as error:
@@ -299,13 +375,31 @@ class PGPackDumper:
         self,
         dtype_data: Iterable[Any],
         table_name: str,
+        source: DBMetadata | None = None,
     ) -> None:
         """Write from python iterable object
         into PostgreSQL/GreenPlum table."""
 
+        if not source:
+            source = DBMetadata(
+                name="python",
+                version="iterable object",
+                columns={"Unknown": "Unknown"},
+            )
+
         self.copy_buffer.table_name = table_name
-        _, pgtypes, _ = metadata_reader(self.copy_buffer.metadata)
+        columns, pgtypes, pgparam = metadata_reader(self.copy_buffer.metadata)
         writer = PGCopyWriter(None, pgtypes)
+        destination = DBMetadata(
+            name=self.dbname,
+            version=self.version,
+            columns=make_columns(
+                list_columns=columns,
+                pgtypes=pgtypes,
+                pgparam=pgparam,
+            ),
+        )
+        self.logger.info(transfer_diagram(source, destination))
         self.copy_buffer.copy_from(writer.from_rows(dtype_data))
         self.connect.commit()
         self.refresh()
@@ -320,6 +414,14 @@ class PGPackDumper:
         self.from_rows(
             dtype_data=iter(data_frame.values),
             table_name=table_name,
+            source=DBMetadata(
+                name="pandas",
+                version="DataFrame",
+                columns=OrderedDict(zip(
+                    data_frame.columns,
+                    [str(dtype) for dtype in data_frame.dtypes],
+                )),
+            )
         )
 
     def from_polars(
@@ -332,6 +434,14 @@ class PGPackDumper:
         self.from_rows(
             dtype_data=data_frame.iter_rows(),
             table_name=table_name,
+            source=DBMetadata(
+                name="polars",
+                version="DataFrame",
+                columns=OrderedDict(zip(
+                    data_frame.columns,
+                    [str(dtype) for dtype in data_frame.dtypes],
+                )),
+            )
         )
 
     def refresh(self) -> None:
