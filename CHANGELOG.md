@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.1.0
+
+* Update depends pgpack==0.3.1.0
+
 ## 0.3.0.0
 
 * Update depends pgpack==0.3.0.9
