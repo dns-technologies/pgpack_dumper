@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.2.1
+
+* Improve get metadata for numeric column without precission (thnx to @Art_Dmitriev)
+
 ## 0.3.2.0
 
 * Fix chunk_query for ignoring semicolons inside string literals
