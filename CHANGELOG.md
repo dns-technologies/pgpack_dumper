@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.2.0
+
+* Fix chunk_query for ignoring semicolons inside string literals
+
 ## 0.3.1.0
 
 * Update depends pgpack==0.3.1.0
