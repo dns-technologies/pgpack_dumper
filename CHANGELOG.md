@@ -1,8 +1,14 @@
 # Version History
 
+## 0.3.2.2
+
+* Update depends pgpack==0.3.1.1
+* Update depends psycopg_binary>=3.2.12
+* Update depends psycopg==3.2.12
+
 ## 0.3.2.1
 
-* Improve get metadata for numeric column without precission (thnx to @Art_Dmitriev)
+* Improve get metadata for numeric column without precision (thnx to @Art_Dmitriev)
 
 ## 0.3.2.0
 
