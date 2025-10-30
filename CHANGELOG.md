@@ -1,5 +1,10 @@
 # Version History
 
+## 0.3.3.0
+
+* Fix attnum position in metadata (thnx to @Art_Dmitriev)
+* Improve Multiquery decorator
+
 ## 0.3.2.2
 
 * Update depends pgpack==0.3.1.1
