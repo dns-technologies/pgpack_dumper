@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.3.1
+
+* Improve chunk_query function
+
 ## 0.3.3.0
 
 * Fix attnum position in metadata (thnx to @Art_Dmitriev)
