@@ -249,6 +249,7 @@ class PGPackDumper:
                 return reader.close()
 
             self.copy_buffer.table_name = table_dest
+            self.copy_buffer.query = None
             source = DBMetadata(
                 name=src_dbname,
                 version=src_version,

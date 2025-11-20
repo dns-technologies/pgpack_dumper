@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.3.2
+
+* Fix write_between diagram
+
 ## 0.3.3.1
 
 * Improve chunk_query function
