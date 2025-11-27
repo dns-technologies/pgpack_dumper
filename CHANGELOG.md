@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.3.3
+
+* Fix query with limit state metadata read error
+* Fix query end with ; metadata read error
+* Del chunks after write
+* Add gc collect
+
 ## 0.3.3.2
 
 * Fix write_between diagram

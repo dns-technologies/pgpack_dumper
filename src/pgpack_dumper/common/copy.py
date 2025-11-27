@@ -105,6 +105,7 @@ class CopyBuffer:
             for bytes_data in copyobj:
                 size += len(bytes_data)
                 cp.write(bytes_data)
+                del bytes_data
 
         self.logger.info(f"Successfully sending {size} bytes.")
         self.logger.info(f"Write into {host}.{self.table_name} done.")
@@ -134,6 +135,7 @@ class CopyBuffer:
                 for data in copy_to:
                     size += len(data)
                     copy_from.write(data)
+                    del data
 
             self.logger.info(f"Successfully sending {size} bytes.")
             self.logger.info(

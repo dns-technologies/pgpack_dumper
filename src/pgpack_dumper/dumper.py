@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from collections.abc import Generator
+from gc import collect
 from io import (
     BufferedReader,
     BufferedWriter,
@@ -136,6 +137,7 @@ class PGPackDumper:
             if output:
                 self.refresh()
 
+            collect()
             return output
 
         return wrapper
@@ -336,6 +338,7 @@ class PGPackDumper:
                 ),
             )
             self.logger.info(transfer_diagram(source, destination))
+            collect()
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
             pgpack.close()
@@ -401,6 +404,7 @@ class PGPackDumper:
             ),
         )
         self.logger.info(transfer_diagram(source, destination))
+        collect()
         self.copy_buffer.copy_from(writer.from_rows(dtype_data))
         self.connect.commit()
         self.refresh()

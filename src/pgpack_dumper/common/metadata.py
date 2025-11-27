@@ -13,10 +13,16 @@ def read_metadata(
 ) -> bytes:
     """Read metadata for query or table."""
 
+    query = query.strip().strip(";")
+
     if not query and not table_name:
         raise ValueError()
 
     if query:
+
+        if "limit" in query.lower():
+            query = f"select * from ({query}) as {random_name()}"
+
         session_name = random_name()
         prepare_name = f"{session_name}_prepare"
         table_name = f"{session_name}_temp"
