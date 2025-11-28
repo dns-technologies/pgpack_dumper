@@ -13,12 +13,12 @@ def read_metadata(
 ) -> bytes:
     """Read metadata for query or table."""
 
-    query = query.strip().strip(";")
-
     if not query and not table_name:
         raise ValueError()
 
     if query:
+
+        query = query.strip().strip(";")
 
         if "limit" in query.lower():
             query = f"select * from ({query}) as {random_name()}"

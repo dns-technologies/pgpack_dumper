@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.3.4
+
+* Fix None query error
+
 ## 0.3.3.3
 
 * Fix query with limit state metadata read error
