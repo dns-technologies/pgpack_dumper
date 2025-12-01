@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgpack_dumper"
-version = "0.3.3.4"
+version = "0.3.3.5"
 description = "Library for read and write PGPack format between PostgreSQL and file."
 readme = "README.md"
 requires-python = ">=3.10"

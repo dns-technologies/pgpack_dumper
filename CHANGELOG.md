@@ -1,5 +1,10 @@
 # Version History
 
+## 0.3.3.5
+
+* Fix diagram destination table
+* Refactor PGPackDumper.__write_between()
+
 ## 0.3.3.4
 
 * Fix None query error

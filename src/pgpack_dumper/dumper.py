@@ -240,9 +240,8 @@ class PGPackDumper:
                     query=query_src,
                     table_name=table_src,
                 )
-                dtype_data = reader.to_rows()
                 self.from_rows(
-                    dtype_data=dtype_data,
+                    dtype_data=reader.to_rows(),
                     table_name=table_dest,
                     source=dumper_src._dbmeta,
                 )
@@ -320,6 +319,7 @@ class PGPackDumper:
 
         try:
             self.copy_buffer.table_name = table_name
+            self.copy_buffer.query = None
             pgpack = PGPackReader(fileobj)
             source = DBMetadata(
                 name="file",
@@ -392,6 +392,7 @@ class PGPackDumper:
             )
 
         self.copy_buffer.table_name = table_name
+        self.copy_buffer.query = None
         columns, pgtypes, pgparam = metadata_reader(self.copy_buffer.metadata)
         writer = PGCopyWriter(None, pgtypes)
         destination = DBMetadata(
