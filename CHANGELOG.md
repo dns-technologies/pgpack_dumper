@@ -3,6 +3,7 @@
 ## 0.3.3.6
 
 * Update depends pgcopylib==0.2.2.3
+* Update depends pgpack==0.3.1.2
 * Update depends psycopg>=3.3.0
 * Update depends psycopg_binary>=3.3.0
 * Update depends sqlparse>=0.5.4
