@@ -1,5 +1,13 @@
 # Version History
 
+## 0.3.3.6
+
+* Update depends pgcopylib==0.2.2.3
+* Update depends psycopg>=3.3.0
+* Update depends psycopg_binary>=3.3.0
+* Update depends sqlparse>=0.5.4
+* Fix write_timestamp error Can't subtract offset-naive and offset-aware datetimes
+
 ## 0.3.3.5
 
 * Fix diagram destination table
