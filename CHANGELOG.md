@@ -1,5 +1,11 @@
 # Version History
 
+## 0.3.4.0
+
+* Update depends pgcopylib==0.2.2.4
+* Update depends pgpack==0.3.1.3
+* Add auto convert String/FixedString(36) from Clickhouse data to Postgres uuid
+
 ## 0.3.3.6
 
 * Update depends pgcopylib==0.2.2.3
