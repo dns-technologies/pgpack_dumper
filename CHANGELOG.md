@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.4.1
+
+* Update depends pgcopylib==0.2.2.5
+* Update depends pgpack==0.3.1.4
+* Improve invalid byte sequence for encoding "UTF8": 0x00
+* Disable Linux Aarch64
+
 ## 0.3.4.0
 
 * Update depends pgcopylib==0.2.2.4
