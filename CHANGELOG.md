@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.4.2
+
+* Update depends pgcopylib==0.2.2.6
+* Update depends pgpack==0.3.1.5
+* Downgrade compile depends to cython==0.29.33
+* Make wheels for python 3.10 and 3.11 only
+
 ## 0.3.4.1
 
 * Update depends pgcopylib==0.2.2.5
