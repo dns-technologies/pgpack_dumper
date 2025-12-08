@@ -78,7 +78,7 @@ class CopyBuffer:
         elif self.query:
             self.logger.info(f"Start read query from {host}.")
             self.logger.info("Use method read from select.")
-            self.table_name = f"({self.query})"
+            self.table_name = f"({self.query}\n)"
 
         return self.cursor.copy(
             query_template("copy_to").format(table_name=self.table_name)

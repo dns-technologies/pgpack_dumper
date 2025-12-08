@@ -1,5 +1,15 @@
 # Version History
 
+## 0.3.4.3
+
+* Fix read query with comments in last line
+* Update depends pgcopylib==0.2.2.7
+* Update depends pgpack==0.3.1.6
+* Update depends psycopg_binary>=3.3.2
+* Update depends psycopg>=3.3.2
+* Back compile depends to cython>=0.29.33
+* Make wheels for python 3.10-3.14
+
 ## 0.3.4.2
 
 * Update depends pgcopylib==0.2.2.6

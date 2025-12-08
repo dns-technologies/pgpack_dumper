@@ -21,7 +21,7 @@ def read_metadata(
         query = query.strip().strip(";")
 
         if "limit" in query.lower():
-            query = f"select * from ({query}) as {random_name()}"
+            query = f"select * from ({query}\n) as {random_name()}"
 
         session_name = random_name()
         prepare_name = f"{session_name}_prepare"
