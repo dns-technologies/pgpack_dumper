@@ -1,5 +1,10 @@
 # Version History
 
+## 0.3.4.4
+
+* Update depends pgcopylib==0.2.2.8
+* Update depends pgpack==0.3.1.7
+
 ## 0.3.4.3
 
 * Fix read query with comments in last line
