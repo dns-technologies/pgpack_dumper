@@ -1,4 +1,4 @@
-pgpack==0.3.1.7
+pgpack==0.3.2.0
 psycopg_binary>=3.3.2
 psycopg>=3.3.2
 sqlparse>=0.5.4
