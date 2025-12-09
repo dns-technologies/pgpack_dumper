@@ -1,5 +1,11 @@
 # Version History
 
+## 0.3.4.7
+
+* Update depends pgcopylib==0.2.3.2
+* Update depends pgpack==0.3.2.2
+* Fix build from source on unix systems
+
 ## 0.3.4.6
 
 * Update depends pgcopylib==0.2.3.1
