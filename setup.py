@@ -15,10 +15,11 @@ extensions = [
 
 setup(
     name="pgpack_dumper",
-    version="0.3.4.7",
+    version="0.3.4.8",
     package_dir={"": "src"},
     ext_modules=cythonize(extensions, language_level="3"),
     packages=[
+        "pgpack_dumper",
         "pgpack_dumper.common",
     ],
     package_data={

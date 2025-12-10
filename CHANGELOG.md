@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.4.8
+
+* Add error where table have empty data
+* Change server version view
+* Remove double quotes from log where table name uses capital letters
+* Fix build from source on linux systems
+
 ## 0.3.4.7
 
 * Update depends pgcopylib==0.2.3.2

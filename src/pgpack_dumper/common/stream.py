@@ -5,6 +5,7 @@ from typing import (
 
 from pgcopylib import PGCopyReader
 from pgpack import (
+    PGPackError,
     PGPackReader,
     metadata_reader,
 )
@@ -30,10 +31,14 @@ class StreamReader(PGPackReader):
             self.pgtypes,
             self.pgparam,
         ) = metadata_reader(self.metadata)
-        self.pgcopy = PGCopyReader(
-            self.copyobj,
-            self.pgtypes,
-        )
+
+        try:
+            self.pgcopy = PGCopyReader(
+                self.copyobj,
+                self.pgtypes,
+            )
+        except IndexError:
+            raise PGPackError("Empty data returned.")
 
     def __str__(self) -> str:
         """String representation of PGPackReader."""

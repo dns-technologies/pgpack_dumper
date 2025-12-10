@@ -62,7 +62,9 @@ class CopyBuffer:
         host = self.cursor.connection.info.host
 
         if not self.query:
-            self.logger.info(f"Start read from {host}.{self.table_name}.")
+            self.logger.info(
+                f"Start read from {host}.{self.table_name}.".replace('"', ""),
+            )
             self.cursor.execute(query_template("relkind").format(
                 table_name=self.table_name,
             ))
@@ -97,7 +99,9 @@ class CopyBuffer:
 
         host = self.cursor.connection.info.host
         size = 0
-        self.logger.info(f"Start write into {host}.{self.table_name}.")
+        self.logger.info(
+            f"Start write into {host}.{self.table_name}.".replace('"', ""),
+        )
 
         with self.cursor.copy(
             query_template("copy_from").format(table_name=self.table_name)
@@ -108,7 +112,9 @@ class CopyBuffer:
                 del bytes_data
 
         self.logger.info(f"Successfully sending {size} bytes.")
-        self.logger.info(f"Write into {host}.{self.table_name} done.")
+        self.logger.info(
+            f"Write into {host}.{self.table_name} done.".replace('"', ""),
+        )
 
     def copy_between(
         self,
@@ -124,10 +130,11 @@ class CopyBuffer:
                 copy_buffer.query,
             )
             size = 0
-            self.logger.info(
+            message = (
                 f"Copy {source_object} from {source_host} into "
                 f"{destination_host}.{self.table_name} started."
-            )
+            ).replace('"', "")
+            self.logger.info(message)
 
             with self.cursor.copy(
                 query_template("copy_from").format(table_name=self.table_name)
@@ -138,10 +145,11 @@ class CopyBuffer:
                     del data
 
             self.logger.info(f"Successfully sending {size} bytes.")
-            self.logger.info(
+            message = (
                 f"Copy {source_object} from {source_host}"
                 f"into {destination_host}.{self.table_name} done."
-            )
+            ).replace('"', "")
+            self.logger.info(message)
 
     def copy_reader(self) -> Generator[bytes, None, None]:
         """Read bytes from copy object."""
@@ -156,4 +164,4 @@ class CopyBuffer:
             for data in copy_object:
                 yield bytes(data)
 
-        self.logger.info(f"Read {source} from {host} done.")
+        self.logger.info(f"Read {source} from {host} done.".replace('"', ""))

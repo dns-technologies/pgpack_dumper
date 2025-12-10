@@ -17,6 +17,7 @@ from typing import (
 from pgcopylib import PGCopyWriter
 from pgpack import (
     CompressionMethod,
+    PGPackError,
     PGPackReader,
     PGPackWriter,
     metadata_reader,
@@ -76,21 +77,24 @@ class PGPackDumper:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperError(error)
 
-        self.cursor.execute(query_template("dbname"))
-        self.dbname = self.cursor.fetchone()[0]
-        self.version = (
+        version = (
             f"{self.connect.info.server_version // 10000}."
             f"{self.connect.info.server_version % 1000}"
         )
 
+        self.cursor.execute(query_template("dbname"))
+        self.dbname = self.cursor.fetchone()[0]
+
         if self.dbname == "greenplum":
             self.cursor.execute(query_template("gpversion"))
             gpversion = self.cursor.fetchone()[0]
-            self.version = f"{self.version} gp {gpversion}"
+            self.version = f"{gpversion} (postgres {version})"
+        else:
+            self.version = version
 
         self.logger.info(
             f"PGPackDumper initialized for host {self.connector.host}"
-            f"[version {self.version}]"
+            f"[{self.dbname} {self.version}]"
         )
 
     @staticmethod
@@ -291,10 +295,15 @@ class PGPackDumper:
                 *metadata_reader(metadata),
             ),
         )
-        return StreamReader(
-            metadata,
-            self.copy_buffer.copy_to(),
-        )
+
+        try:
+            return StreamReader(
+                metadata,
+                self.copy_buffer.copy_to(),
+            )
+        except PGPackError as error:
+            self.logger.error(f"{error.__class__.__name__}: {error}")
+            raise PGPackDumperReadError(error)
 
     def read_dump(
         self,
