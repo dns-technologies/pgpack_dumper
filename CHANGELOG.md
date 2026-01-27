@@ -1,5 +1,12 @@
 # Version History
 
+## 0.3.5.0
+
+* Update depends pgcopylib==0.2.3.3
+* Update depends pgpack==0.3.2.3
+* Update depends sqlparse>=0.5.5
+* Change documentation link
+
 ## 0.3.4.8
 
 * Add error where table have empty data
