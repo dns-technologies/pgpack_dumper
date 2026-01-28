@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.5.1
+
+* Fix chunk_query function
+
 ## 0.3.5.0
 
 * Update depends pgcopylib==0.2.3.3
