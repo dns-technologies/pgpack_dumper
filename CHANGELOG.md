@@ -1,5 +1,9 @@
 # Version History
 
+## 0.3.5.2
+
+* Add application_name
+
 ## 0.3.5.1
 
 * Fix chunk_query function

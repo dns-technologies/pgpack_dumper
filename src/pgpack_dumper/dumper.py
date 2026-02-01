@@ -46,6 +46,7 @@ from .common import (
     query_template,
     transfer_diagram,
 )
+from .version import __version__
 
 
 class PGPackDumper:
@@ -66,8 +67,10 @@ class PGPackDumper:
             self.connector: PGConnector = connector
             self.compression_method: CompressionMethod = compression_method
             self.logger = logger
+            self.application_name = f"{self.__class__.__name__}/{__version__}"
             self.connect: Connection = Connection.connect(
-                **self.connector._asdict()
+                application_name=self.application_name,
+                **self.connector._asdict(),
             )
             self.cursor: Cursor = self.connect.cursor()
             self.copy_buffer: CopyBuffer = CopyBuffer(self.cursor, self.logger)

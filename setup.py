@@ -15,7 +15,7 @@ extensions = [
 
 setup(
     name="pgpack_dumper",
-    version="0.3.5.1",
+    version="0.3.5.2",
     package_dir={"": "src"},
     ext_modules=cythonize(extensions, language_level="3"),
     packages=[
