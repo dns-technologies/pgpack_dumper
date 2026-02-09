@@ -1,3 +1,5 @@
+from json import dumps
+
 from psycopg import Cursor
 
 from .query import (
@@ -10,6 +12,7 @@ def read_metadata(
     cursor: Cursor,
     query: str | None = None,
     table_name: str | None = None,
+    is_readonly: bool = False,
 ) -> bytes:
     """Read metadata for query or table."""
 
@@ -22,6 +25,30 @@ def read_metadata(
 
         if "limit" in query.lower():
             query = f"select * from ({query}\n) as {random_name()}"
+
+        if is_readonly:
+            cursor.execute(f"{query} limit 0")
+            metadata = [
+                [
+                    column_number,
+                    [
+                        column.name,
+                        column.type_code,
+                        column.internal_size or
+                        column.precision or
+                        column.display_size or -1,
+                        column.scale or 0,
+                        int("[]" in str(column)),
+                    ]
+                ]
+                for column_number, column in
+                enumerate(cursor.description, 1)
+            ]
+
+            return dumps(
+                metadata,
+                ensure_ascii=False,
+            ).encode("utf-8")
 
         session_name = random_name()
         prepare_name = f"{session_name}_prepare"

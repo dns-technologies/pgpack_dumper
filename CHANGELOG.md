@@ -1,5 +1,13 @@
 # Version History
 
+## 0.3.5.4
+
+* Add is_readonly attribute to PGPackDumper
+* Add is_readonly attribute to CopyBuffer
+* Add is_readonly parameter to read_metadata()
+* Fix read metadata from readonly transactions
+* Fix get text column size
+
 ## 0.3.5.3
 
 * Downgrade depends sqlparse>=0.5.4

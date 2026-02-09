@@ -52,6 +52,9 @@ from .version import __version__
 class PGPackDumper:
     """Class for read and write PGPack format."""
 
+    dbname: str
+    is_readonly: bool
+
     def __init__(
         self,
         connector: PGConnector,
@@ -84,9 +87,9 @@ class PGPackDumper:
             f"{self.connect.info.server_version // 10000}."
             f"{self.connect.info.server_version % 1000}"
         )
-
         self.cursor.execute(query_template("dbname"))
-        self.dbname = self.cursor.fetchone()[0]
+        self.dbname, self.is_readonly = self.cursor.fetchone()
+        self.copy_buffer.is_readonly = self.is_readonly
 
         if self.dbname == "greenplum":
             self.cursor.execute(query_template("gpversion"))

@@ -36,6 +36,7 @@ class CopyBuffer:
         self.logger = logger
         self.query = query
         self.table_name = table_name
+        self.is_readonly = False
 
     @property
     def metadata(self) -> bytes:
@@ -47,6 +48,7 @@ class CopyBuffer:
             self.cursor,
             self.query,
             self.table_name,
+            self.is_readonly,
         )
         self.logger.info(f"Read metadata from host {host} done.")
         return metadata
