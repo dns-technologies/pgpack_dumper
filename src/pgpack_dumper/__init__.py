@@ -1,11 +1,11 @@
 """Library for read and write PGPack format between PostgreSQL and file."""
 
+from light_compressor import CompressionMethod
 from pgcopylib import (
     PGCopyReader,
     PGCopyWriter,
 )
 from pgpack import (
-    CompressionMethod,
     PGPackReader,
     PGPackWriter,
 )

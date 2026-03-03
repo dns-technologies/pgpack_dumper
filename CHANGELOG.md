@@ -1,5 +1,19 @@
 # Version History
 
+## 0.3.6.dev0
+
+* Developer release (not public to pip)
+* Update depends psycopg_binary>=3.3.3
+* Update depends psycopg>=3.3.3
+* Add depends base_dumper==0.0.0.5
+* PGConnector now based on DBConnector
+* Fix write_between() method without dumper_src parameter
+* Refactor code
+* Change hidden methods to protected methods
+* Add worked timeout and isolation parameters
+* Add mode parameter for future updates
+* Refactor class StreamReader
+
 ## 0.3.5.4
 
 * Add is_readonly attribute to PGPackDumper

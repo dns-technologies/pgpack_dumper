@@ -1,11 +1,9 @@
 from json import dumps
 
+from base_dumper import random_name
 from psycopg import Cursor
 
-from .query import (
-    query_template,
-    random_name,
-)
+from .query import query_template
 
 
 def read_metadata(

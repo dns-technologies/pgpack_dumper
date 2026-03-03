@@ -25,7 +25,7 @@ class StreamReader(PGPackReader):
         """Class initialization."""
 
         self.metadata = metadata
-        self.copyobj = CopyReader(copyobj)
+        self.fileobj = CopyReader(copyobj)
         (
             self.columns,
             self.pgtypes,
@@ -34,7 +34,7 @@ class StreamReader(PGPackReader):
 
         try:
             self.pgcopy = PGCopyReader(
-                self.copyobj,
+                self.fileobj,
                 self.pgtypes,
             )
         except IndexError:
@@ -82,4 +82,4 @@ Readed rows: {self.pgcopy.num_rows}
     def close(self) -> None:
         """Close stream object."""
 
-        self.copyobj.close()
+        self.fileobj.close()

@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from collections.abc import Generator
 from gc import collect
 from io import (
@@ -6,7 +5,6 @@ from io import (
     BufferedWriter,
 )
 from logging import Logger
-from types import MethodType
 from typing import (
     Any,
     Iterable,
@@ -14,9 +12,18 @@ from typing import (
     Union,
 )
 
+from base_dumper import (
+    BaseDumper,
+    DBMetadata,
+    DumperMode,
+    CompressionMethod,
+    IsolationLevel,
+    multiquery,
+    timeouts,
+    transfer_diagram,
+)
 from pgcopylib import PGCopyWriter
 from pgpack import (
-    CompressionMethod,
     PGPackError,
     PGPackReader,
     PGPackWriter,
@@ -27,50 +34,51 @@ from psycopg import (
     Copy,
     Cursor,
 )
-from pandas import DataFrame as PdFrame
-from polars import DataFrame as PlFrame
-from sqlparse import format as sql_format
 
 from .common import (
     CopyBuffer,
-    DBMetadata,
-    DumperLogger,
     PGConnector,
     PGPackDumperError,
     PGPackDumperReadError,
-    PGPackDumperWriteError,
     PGPackDumperWriteBetweenError,
+    PGPackDumperWriteError,
     StreamReader,
-    chunk_query,
+    defines,
+    isolation_level,
     make_columns,
     query_template,
-    transfer_diagram,
+    statement_seconds,
 )
 from .version import __version__
 
 
-class PGPackDumper:
+class PGPackDumper(BaseDumper):
     """Class for read and write PGPack format."""
-
-    dbname: str
-    is_readonly: bool
 
     def __init__(
         self,
         connector: PGConnector,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
         logger: Logger | None = None,
+        timeout: int | None = None,
+        isolation: IsolationLevel = IsolationLevel.committed,
+        mode: DumperMode = DumperMode.PROD,
     ) -> None:
         """Class initialization."""
 
-        if not logger:
-            logger = DumperLogger()
+        self.version = __version__
+
+        super().__init__(
+            connector,
+            compression_method,
+            logger,
+            timeout,
+            isolation,
+            mode,
+        )
 
         try:
-            self.connector: PGConnector = connector
-            self.compression_method: CompressionMethod = compression_method
-            self.logger = logger
-            self.application_name = f"{self.__class__.__name__}/{__version__}"
+            self.application_name = f"{self.__class__.__name__}/{self.version}"
             self.connect: Connection = Connection.connect(
                 application_name=self.application_name,
                 **self.connector._asdict(),
@@ -87,9 +95,19 @@ class PGPackDumper:
             f"{self.connect.info.server_version // 10000}."
             f"{self.connect.info.server_version % 1000}"
         )
+        self.stream_type = "pgcopy"
+        self.isolation = isolation
         self.cursor.execute(query_template("dbname"))
         self.dbname, self.is_readonly = self.cursor.fetchone()
         self.copy_buffer.is_readonly = self.is_readonly
+
+        if timeout is None:
+            if self.dbname == "greenplum":
+                timeout = timeouts.GREENPLUM_DEFAULT_TIMEOUT
+            elif self.dbname == "postgres":
+                timeout = timeouts.POSTGRES_DEFAULT_TIMEOUT
+
+        self.timeout = timeout
 
         if self.dbname == "greenplum":
             self.cursor.execute(query_template("gpversion"))
@@ -103,64 +121,44 @@ class PGPackDumper:
             f"[{self.dbname} {self.version}]"
         )
 
-    @staticmethod
-    def multiquery(dump_method: MethodType):
-        """Multiquery decorator."""
+    @property
+    def timeout(self) -> int:
+        """Property method for get statement_timeout."""
 
-        def wrapper(*args, **kwargs):
+        return self._timeout
 
-            first_part: list[str]
-            second_part: list[str]
+    @timeout.setter
+    def timeout(self, timeout_value: int) -> int:
+        """Property method for set statement_timeout."""
 
-            self: PGPackDumper = args[0]
-            cursor: Cursor = (kwargs.get("dumper_src") or self).cursor
-            query: str = kwargs.get("query_src") or kwargs.get("query")
-            part: int = 1
-            first_part, second_part = chunk_query(self.query_formatter(query))
-            total_prts = len(sum((first_part, second_part), [])) + int(
-                bool(kwargs.get("table_name") or kwargs.get("table_src"))
-            )
+        set_value = defines.SET_TIMEOUT.format(timeout_value)
+        self.cursor.execute(set_value)
+        self.connect.commit()
+        self.cursor.execute(defines.GET_TIMEOUT)
+        self._timeout = statement_seconds(self.cursor.fetchone()[0])
+        return self._timeout
 
-            if len(first_part) > 1:
-                for query in first_part:
-                    self.logger.info(f"Execute query {part}/{total_prts}")
-                    cursor.execute(query)
-                    part += 1
+    @property
+    def isolation(self) -> IsolationLevel:
+        """Property method for get current
+        server transaction isolation level."""
 
-            if second_part:
-                for key in ("query", "query_src"):
-                    if key in kwargs:
-                        kwargs[key] = second_part.pop(0)
-                        break
+        return self._isolation
 
-            self.logger.info(
-                f"Execute stream {part}/{total_prts} [pgcopy mode]"
-            )
-            output = dump_method(*args, **kwargs)
+    @isolation.setter
+    def isolation(self, isolation_value: IsolationLevel) -> IsolationLevel:
+        """Property method for set current
+        server transaction isolation level."""
 
-            if second_part:
-                for query in second_part:
-                    part += 1
-                    self.logger.info(f"Execute query {part}/{total_prts}")
-                    cursor.execute(query)
-
-            if output:
-                self.refresh()
-
-            collect()
-            return output
-
-        return wrapper
-
-    def query_formatter(self, query: str) -> str | None:
-        """Reformat query."""
-
-        if not query:
-            return
-        return sql_format(sql=query, strip_comments=True).strip().strip(";")
+        set_value = defines.SET_ISOLATION_LEVEL.format(isolation_value.value)
+        self.cursor.execute(set_value)
+        self.connect.commit()
+        self.cursor.execute(defines.GET_ISOLATION_LEVEL)
+        self._isolation = isolation_level(self.cursor.fetchone()[0])
+        return self._isolation
 
     @multiquery
-    def __read_dump(
+    def _read_dump(
         self,
         fileobj: BufferedWriter,
         query: str | None,
@@ -216,7 +214,7 @@ class PGPackDumper:
             raise PGPackDumperReadError(error)
 
     @multiquery
-    def __write_between(
+    def _write_between(
         self,
         table_dest: str,
         table_src: str | None,
@@ -239,6 +237,10 @@ class PGPackDumper:
                 )
                 src_dbname = self.dbname
                 src_version = self.version
+                (
+                    self.copy_buffer,
+                    source_copy_buffer,
+                ) = source_copy_buffer, self.copy_buffer
             elif dumper_src.__class__ is PGPackDumper:
                 source_copy_buffer = dumper_src.copy_buffer
                 source_copy_buffer.table_name = table_src
@@ -284,7 +286,7 @@ class PGPackDumper:
             raise PGPackDumperWriteBetweenError(error)
 
     @multiquery
-    def __to_reader(
+    def _to_reader(
         self,
         query: str | None,
         table_name: str | None,
@@ -310,20 +312,6 @@ class PGPackDumper:
         except PGPackError as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
-
-    def read_dump(
-        self,
-        fileobj: BufferedWriter,
-        query: str | None = None,
-        table_name: str | None = None,
-    ) -> bool:
-        """Read PGPack dump from PostgreSQL/GreenPlum."""
-
-        return self.__read_dump(
-            fileobj=fileobj,
-            query=query,
-            table_name=table_name,
-        )
 
     def write_dump(
         self,
@@ -362,34 +350,6 @@ class PGPackDumper:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteError(error)
 
-    def write_between(
-        self,
-        table_dest: str,
-        table_src: str | None = None,
-        query_src: str | None = None,
-        dumper_src: Union["PGPackDumper", object] = None,
-    ) -> None:
-        """Write from PostgreSQL/GreenPlum into PostgreSQL/GreenPlum."""
-
-        return self.__write_between(
-            table_dest=table_dest,
-            table_src=table_src,
-            query_src=query_src,
-            dumper_src=dumper_src,
-        )
-
-    def to_reader(
-        self,
-        query: str | None = None,
-        table_name: str | None = None,
-    ) -> StreamReader:
-        """Get stream from PostgreSQL/GreenPlum as StreamReader object."""
-
-        return self.__to_reader(
-            query=query,
-            table_name=table_name,
-        )
-
     def from_rows(
         self,
         dtype_data: Iterable[Any],
@@ -424,46 +384,6 @@ class PGPackDumper:
         self.copy_buffer.copy_from(writer.from_rows(dtype_data))
         self.connect.commit()
         self.refresh()
-
-    def from_pandas(
-        self,
-        data_frame: PdFrame,
-        table_name: str,
-    ) -> None:
-        """Write from pandas.DataFrame into PostgreSQL/GreenPlum table."""
-
-        self.from_rows(
-            dtype_data=iter(data_frame.values),
-            table_name=table_name,
-            source=DBMetadata(
-                name="pandas",
-                version="DataFrame",
-                columns=OrderedDict(zip(
-                    data_frame.columns,
-                    [str(dtype) for dtype in data_frame.dtypes],
-                )),
-            )
-        )
-
-    def from_polars(
-        self,
-        data_frame: PlFrame,
-        table_name: str,
-    ) -> None:
-        """Write from polars.DataFrame into PostgreSQL/GreenPlum table."""
-
-        self.from_rows(
-            dtype_data=data_frame.iter_rows(),
-            table_name=table_name,
-            source=DBMetadata(
-                name="polars",
-                version="DataFrame",
-                columns=OrderedDict(zip(
-                    data_frame.columns,
-                    [str(dtype) for dtype in data_frame.dtypes],
-                )),
-            )
-        )
 
     def refresh(self) -> None:
         """Refresh session."""

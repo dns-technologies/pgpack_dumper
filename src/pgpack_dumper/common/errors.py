@@ -1,16 +1,22 @@
-class CopyBufferError(Exception):
+from base_dumper import (
+    BaseDumperError,
+    BaseDumperTypeError,
+    BaseDumperValueError,
+)
+
+class CopyBufferError(BaseDumperError):
     """CopyBuffer base error."""
 
 
-class CopyBufferObjectError(TypeError):
+class CopyBufferObjectError(CopyBufferError, BaseDumperTypeError):
     """Destination object not support."""
 
 
-class CopyBufferTableNotDefined(ValueError):
+class CopyBufferTableNotDefined(CopyBufferError, BaseDumperValueError):
     """Destination table not defined."""
 
 
-class PGPackDumperError(Exception):
+class PGPackDumperError(BaseDumperError):
     """PGPackDumper base error."""
 
 
