@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgpack_dumper"
-version = "0.3.6.dev0"
+version = "0.3.6.dev1"
 description = "Library for read and write PGPack format between PostgreSQL and file."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,17 +22,17 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "pgpack==0.3.2.3",
+    "pgpack==0.3.3.dev0",
     "psycopg_binary>=3.3.3",
     "psycopg>=3.3.3",
-    "base_dumper==0.0.0.5",
+    "base_dumper==0.1.0.dev2",
 ]
 
 [project.urls]
-Homepage = "https://github.com/0xMihalich/pgpack_dumper"
-Documentation = "https://0xmihalich.github.io/dbhose_airflow/classes/pgpack_dumper/index.html"
-Repository = "https://github.com/0xMihalich/pgpack_dumper"
-Changelog = "https://github.com/0xMihalich/pgpack_dumper/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/dns-technologies/pgpack_dumper"
+Documentation = "https://dns-technologies.github.io/dbhose_airflow/classes/pgpack_dumper/index.html"
+Repository = "https://github.com/dns-technologies/pgpack_dumper"
+Changelog = "https://github.com/dns-technologies/pgpack_dumper/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = {find = {where = ["src"]}}

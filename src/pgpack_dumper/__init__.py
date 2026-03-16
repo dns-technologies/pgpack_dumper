@@ -1,6 +1,9 @@
 """Library for read and write PGPack format between PostgreSQL and file."""
 
-from light_compressor import CompressionMethod
+from light_compressor import (
+    CompressionLevel,
+    CompressionMethod,
+)
 from pgcopylib import (
     PGCopyReader,
     PGCopyWriter,
@@ -27,6 +30,7 @@ from .version import __version__
 
 __all__ = (
     "__version__",
+    "CompressionLevel",
     "CompressionMethod",
     "CopyBuffer",
     "CopyBufferError",

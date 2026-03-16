@@ -153,24 +153,24 @@ dumper.from_polars(polars_frame, table_name)
 
 ### Open PGPack file format
 
-Get info from my another repository https://github.com/0xMihalich/pgpack
+Get info from my another repository https://github.com/dns-technologies/pgpack
 
 ## Installation
 
 ### From pip
 
 ```bash
-pip install pgpack-dumper
+pip install pgpack-dumper -U --index-url https://dns-technologies.github.io/dbhose-dev-pip/simple/
 ```
 
 ### From local directory
 
 ```bash
-pip install .
+pip install . --extra-index-url https://dns-technologies.github.io/dbhose-dev-pip/simple/
 ```
 
 ### From git
 
 ```bash
-pip install git+https://github.com/0xMihalich/pgpack_dumper
+pip install git+https://github.com/dns-technologies/pgpack_dumper --extra-index-url https://dns-technologies.github.io/dbhose-dev-pip/simple/
 ```

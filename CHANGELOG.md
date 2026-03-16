@@ -1,5 +1,15 @@
 # Version History
 
+## 0.3.6.dev1
+
+* Developer release (not public to pip)
+* Update depends pgcopylib==0.2.4.dev0
+* Update depends pgpack==0.3.3.dev0
+* Update depends base_dumper==0.1.0.dev2
+* Update depends light-compressor==0.1.0.dev2
+* Update README.md
+* Add CompressionLevel constants to import
+
 ## 0.3.6.dev0
 
 * Developer release (not public to pip)

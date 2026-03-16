@@ -14,9 +14,10 @@ from typing import (
 
 from base_dumper import (
     BaseDumper,
+    CompressionMethod,
+    CompressionLevel,
     DBMetadata,
     DumperMode,
-    CompressionMethod,
     IsolationLevel,
     multiquery,
     timeouts,
@@ -59,10 +60,12 @@ class PGPackDumper(BaseDumper):
         self,
         connector: PGConnector,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
+        compression_level: int = CompressionLevel.DEFAULT_COMPRESSION,
         logger: Logger | None = None,
         timeout: int | None = None,
         isolation: IsolationLevel = IsolationLevel.committed,
         mode: DumperMode = DumperMode.PROD,
+        s3fs: bool = False,
     ) -> None:
         """Class initialization."""
 
@@ -71,10 +74,12 @@ class PGPackDumper(BaseDumper):
         super().__init__(
             connector,
             compression_method,
+            compression_level,
             logger,
             timeout,
             isolation,
             mode,
+            s3fs,
         )
 
         try:
@@ -186,6 +191,8 @@ class PGPackDumper(BaseDumper):
                 fileobj,
                 metadata,
                 self.compression_method,
+                self.compression_level,
+                self.s3fs,
             )
             columns = make_columns(*metadata_reader(metadata))
             source = DBMetadata(
