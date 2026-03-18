@@ -1,5 +1,5 @@
 --extra-index-url https://dns-technologies.github.io/dbhose-dev-pip/simple/
-pgpack==0.3.3.dev0
+pgpack==0.3.3.dev1
 psycopg_binary>=3.3.3
 psycopg>=3.3.3
-base_dumper==0.1.0.dev2
+base_dumper==0.1.0.dev4

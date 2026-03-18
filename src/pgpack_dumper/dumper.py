@@ -5,6 +5,8 @@ from io import (
     BufferedWriter,
 )
 from logging import Logger
+from time import time
+from types import MethodType
 from typing import (
     Any,
     Iterable,
@@ -17,6 +19,7 @@ from base_dumper import (
     CompressionMethod,
     CompressionLevel,
     DBMetadata,
+    DebugInfo,
     DumperMode,
     IsolationLevel,
     multiquery,
@@ -45,6 +48,8 @@ from .common import (
     PGPackDumperWriteError,
     StreamReader,
     defines,
+    get_info,
+    get_query_kind,
     isolation_level,
     make_columns,
     query_template,
@@ -60,7 +65,7 @@ class PGPackDumper(BaseDumper):
         self,
         connector: PGConnector,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
-        compression_level: int = CompressionLevel.DEFAULT_COMPRESSION,
+        compression_level: int = CompressionLevel.ZSTD_DEFAULT,
         logger: Logger | None = None,
         timeout: int | None = None,
         isolation: IsolationLevel = IsolationLevel.committed,
@@ -69,7 +74,7 @@ class PGPackDumper(BaseDumper):
     ) -> None:
         """Class initialization."""
 
-        self.version = __version__
+        self.__version__ = __version__
 
         super().__init__(
             connector,
@@ -83,7 +88,7 @@ class PGPackDumper(BaseDumper):
         )
 
         try:
-            self.application_name = f"{self.__class__.__name__}/{self.version}"
+            self.application_name = f"{self.__class__.__name__}/{__version__}"
             self.connect: Connection = Connection.connect(
                 application_name=self.application_name,
                 **self.connector._asdict(),
@@ -126,6 +131,17 @@ class PGPackDumper(BaseDumper):
             f"[{self.dbname} {self.version}]"
         )
 
+        if self.mode is not DumperMode.PROD:
+            self.logger.info(
+                "PGPackDumper additional info:\n"
+                f"Version: {self.__version__}\n"
+                f"Application name: {self.application_name}\n"
+                f"Compression method: {self.compression_method.name}\n"
+                f"Compression level: {self.compression_level}\n"
+                f"Statement timeout: {self.timeout} seconds\n"
+                f"Isolation level: {self.isolation.value}\n"
+            )
+
     @property
     def timeout(self) -> int:
         """Property method for get statement_timeout."""
@@ -161,6 +177,48 @@ class PGPackDumper(BaseDumper):
         self.cursor.execute(defines.GET_ISOLATION_LEVEL)
         self._isolation = isolation_level(self.cursor.fetchone()[0])
         return self._isolation
+
+    def mode_action(
+        self,
+        action_data: str | MethodType | None = None,
+        *args: Any,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """DumperMode.DEBUG or DumperMode.TEST action."""
+
+        if action_data:
+            if isinstance(action_data, str):
+                if self.mode is DumperMode.PROD:
+                    return self.cursor.execute(action_data)
+
+                host = self.connector.host
+                kind = get_query_kind(action_data)
+
+                if kind in ("Create", "Drop"):
+                    start_time = time()
+                    self.cursor.execute(action_data)
+                    duration = round(time() - start_time, 3)
+                    return self.logger.info(DebugInfo(host, kind, duration))
+
+                query = (
+                    "explain (analyze, verbose, buffers, settings, "
+                    f"summary, format json)\n{action_data}"
+                )
+
+                if kind == "Insert":
+                    query = f"{query}\nreturning 1"
+
+                self.cursor.execute(query)
+                explain = self.cursor.fetchone()[0]
+
+                return self.logger.info(get_info(
+                    self.dbname,
+                    host,
+                    kind,
+                    explain,
+                ))
+
+            return action_data(*args, **kwargs)
 
     @multiquery
     def _read_dump(

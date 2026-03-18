@@ -14,6 +14,10 @@ from .errors import (
     PGPackDumperWriteBetweenError,
 )
 from .metadata import read_metadata
+from .info import (
+    get_info,
+    get_query_kind,
+)
 from .query import (
     query_path,
     query_template,
@@ -42,6 +46,8 @@ __all__ = (
     "PGPackDumperWriteError",
     "StreamReader",
     "defines",
+    "get_info",
+    "get_query_kind",
     "isolation_level",
     "make_columns",
     "query_path",

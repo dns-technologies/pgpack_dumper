@@ -3,12 +3,16 @@ from typing import (
     NoReturn
 )
 
-from pgcopylib import PGCopyReader
+from pgcopylib import (
+    PGCopyReader,
+    PGOid,
+)
 from pgpack import (
     PGPackError,
     PGPackReader,
     metadata_reader,
 )
+from polars import Object
 from psycopg import Copy
 
 from .reader import CopyReader
@@ -31,6 +35,19 @@ class StreamReader(PGPackReader):
             self.pgtypes,
             self.pgparam,
         ) = metadata_reader(self.metadata)
+        self.schema_overrides = {
+            column: Object
+            for column, pgtype in zip(self.columns, self.pgtypes)
+            if pgtype in (
+                PGOid._uuid,
+                PGOid._json,
+                PGOid._jsonb,
+                PGOid._inet,
+                PGOid._cidr,
+                PGOid._tsquery,
+                PGOid._tsvector,
+            )
+        }
 
         try:
             self.pgcopy = PGCopyReader(

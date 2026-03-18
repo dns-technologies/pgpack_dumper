@@ -1,5 +1,15 @@
 # Version History
 
+## 0.3.6.dev2
+
+* Developer release (not public to pip)
+* Update depends pgpack==0.3.3.dev1
+* Update depends base_dumper==0.1.0.dev4
+* Update depends light-compressor==0.1.0.dev3
+* Add schema_overrides attribute to StreamReader
+* Add imports DumperLogger, DumperMode, IsolationLevel and Timeouts
+* Add Debug info
+
 ## 0.3.6.dev1
 
 * Developer release (not public to pip)

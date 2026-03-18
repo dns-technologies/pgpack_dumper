@@ -1,8 +1,12 @@
 """Library for read and write PGPack format between PostgreSQL and file."""
 
-from light_compressor import (
+from base_dumper import (
     CompressionLevel,
     CompressionMethod,
+    DumperLogger,
+    DumperMode,
+    IsolationLevel,
+    timeouts as Timeouts,
 )
 from pgcopylib import (
     PGCopyReader,
@@ -36,6 +40,9 @@ __all__ = (
     "CopyBufferError",
     "CopyBufferObjectError",
     "CopyBufferTableNotDefined",
+    "DumperLogger",
+    "DumperMode",
+    "IsolationLevel",
     "PGConnector",
     "PGCopyReader",
     "PGCopyWriter",
@@ -46,5 +53,6 @@ __all__ = (
     "PGPackDumperWriteBetweenError",
     "PGPackReader",
     "PGPackWriter",
+    "Timeouts",
 )
 __author__ = "0xMihalich"
