@@ -140,6 +140,7 @@ class PGPackDumper(BaseDumper):
                 f"Compression level: {self.compression_level}\n"
                 f"Statement timeout: {self.timeout} seconds\n"
                 f"Isolation level: {self.isolation.value}\n"
+                f"Save dumps as S3 objects: {self.s3fs}\n"
             )
 
     @property
