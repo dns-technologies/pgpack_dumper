@@ -14,9 +14,9 @@ def search_object(table: str, query: str = "") -> str:
 
 
 def query_path() -> str:
-    """Path for queryes."""
+    """Path for queries."""
 
-    return f"{Path(__file__).parent.absolute()}/queryes/{{}}.sql"
+    return f"{Path(__file__).parent.absolute()}/queries/{{}}.sql"
 
 
 def query_template(query_name: str) -> str:

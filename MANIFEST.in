@@ -2,7 +2,7 @@ include CHANGELOG.md
 include README.md
 include LICENSE
 
-include src/pgpack_dumper/common/queryes/*.sql
+include src/pgpack_dumper/common/queries/*.sql
 include src/pgpack_dumper/common/*.pyx
 include src/pgpack_dumper/common/*.pyi
 include src/pgpack_dumper/common/*.pxd

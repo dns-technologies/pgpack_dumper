@@ -9,6 +9,7 @@
 * Add schema_overrides attribute to StreamReader
 * Add imports DumperLogger, DumperMode, IsolationLevel and Timeout
 * Add Debug info
+* Rename queryes folder to queries
 
 ## 0.3.6.dev1
 

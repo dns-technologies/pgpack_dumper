@@ -132,6 +132,7 @@ class PGPackDumper(BaseDumper):
         )
 
         if self.mode is not DumperMode.PROD:
+            s3 = "Enable" if self.s3fs else "Disable"
             self.logger.info(
                 "PGPackDumper additional info:\n"
                 f"Version: {self.__version__}\n"
@@ -140,7 +141,7 @@ class PGPackDumper(BaseDumper):
                 f"Compression level: {self.compression_level}\n"
                 f"Statement timeout: {self.timeout} seconds\n"
                 f"Isolation level: {self.isolation.value}\n"
-                f"Save dumps as S3 objects: {self.s3fs}\n"
+                f"Save dumps as S3 objects: {s3}\n"
             )
 
     @property
@@ -198,6 +199,7 @@ class PGPackDumper(BaseDumper):
                 if kind in ("Create", "Drop"):
                     start_time = time()
                     self.cursor.execute(action_data)
+                    self.logger.info("Get query debug info.")
                     duration = round(time() - start_time, 3)
                     return self.logger.info(DebugInfo(host, kind, duration))
 
@@ -210,6 +212,7 @@ class PGPackDumper(BaseDumper):
                     query = f"{query}\nreturning 1"
 
                 self.cursor.execute(query)
+                self.logger.info("Get query debug info.")
                 explain = self.cursor.fetchone()[0]
 
                 return self.logger.info(get_info(
