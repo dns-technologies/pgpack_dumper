@@ -144,6 +144,9 @@ class PGPackDumper(BaseDumper):
                 f"Save dumps as S3 objects: {s3}\n"
             )
 
+            if self.is_readonly:
+                self.logger.warning("Read-only session. Write don't work!")
+
     @property
     def timeout(self) -> int:
         """Property method for get statement_timeout."""
