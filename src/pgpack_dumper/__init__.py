@@ -6,7 +6,7 @@ from base_dumper import (
     DumperLogger,
     DumperMode,
     IsolationLevel,
-    timeouts as Timeouts,
+    Timeout,
 )
 from pgcopylib import (
     PGCopyReader,
@@ -53,6 +53,6 @@ __all__ = (
     "PGPackDumperWriteBetweenError",
     "PGPackReader",
     "PGPackWriter",
-    "Timeouts",
+    "Timeout",
 )
 __author__ = "0xMihalich"

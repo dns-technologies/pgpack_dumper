@@ -22,8 +22,8 @@ from base_dumper import (
     DebugInfo,
     DumperMode,
     IsolationLevel,
+    Timeout,
     multiquery,
-    timeouts,
     transfer_diagram,
 )
 from pgcopylib import PGCopyWriter
@@ -113,9 +113,9 @@ class PGPackDumper(BaseDumper):
 
         if timeout is None:
             if self.dbname == "greenplum":
-                timeout = timeouts.GREENPLUM_DEFAULT_TIMEOUT
+                timeout = Timeout.GREENPLUM_DEFAULT_TIMEOUT
             elif self.dbname == "postgres":
-                timeout = timeouts.POSTGRES_DEFAULT_TIMEOUT
+                timeout = Timeout.POSTGRES_DEFAULT_TIMEOUT
 
         self.timeout = timeout
 

@@ -7,7 +7,7 @@
 * Update depends base_dumper==0.1.0.dev4
 * Update depends light-compressor==0.1.0.dev3
 * Add schema_overrides attribute to StreamReader
-* Add imports DumperLogger, DumperMode, IsolationLevel and Timeouts
+* Add imports DumperLogger, DumperMode, IsolationLevel and Timeout
 * Add Debug info
 
 ## 0.3.6.dev1
