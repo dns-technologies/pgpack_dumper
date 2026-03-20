@@ -15,7 +15,7 @@ def read_metadata(
     """Read metadata for query or table."""
 
     if not query and not table_name:
-        raise ValueError()
+        raise ValueError("No object defined.")
 
     if query:
 

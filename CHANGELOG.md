@@ -1,5 +1,18 @@
 # Version History
 
+## 0.3.6.dev3
+
+* Developer release (not public to pip)
+* Update depends base_dumper==0.1.0.dev5
+* get_info() function
+* Add warning for read-only session in DumperMode.DEBUG/TEST
+* Add TEST mode actions
+* Add PGPackDumper.dump_format parameter
+* Remove PGPackDumper.s3fs parameter
+* Improve DEBUG mode initialivation message
+* Fix PGPackDumper.write_between() for same server
+* Disabled session updates where not required
+
 ## 0.3.6.dev2
 
 * Developer release (not public to pip)

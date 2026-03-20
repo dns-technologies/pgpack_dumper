@@ -21,10 +21,11 @@ from base_dumper import (
     DBMetadata,
     DebugInfo,
     DumperMode,
+    DumpFormat,
     IsolationLevel,
     Timeout,
     multiquery,
-    transfer_diagram,
+    log_diagram,
 )
 from pgcopylib import PGCopyWriter
 from pgpack import (
@@ -70,7 +71,7 @@ class PGPackDumper(BaseDumper):
         timeout: int | None = None,
         isolation: IsolationLevel = IsolationLevel.committed,
         mode: DumperMode = DumperMode.PROD,
-        s3fs: bool = False,
+        dump_format: DumpFormat = DumpFormat.RAW,
     ) -> None:
         """Class initialization."""
 
@@ -84,7 +85,7 @@ class PGPackDumper(BaseDumper):
             timeout,
             isolation,
             mode,
-            s3fs,
+            dump_format,
         )
 
         try:
@@ -132,16 +133,15 @@ class PGPackDumper(BaseDumper):
         )
 
         if self.mode is not DumperMode.PROD:
-            s3 = "Enable" if self.s3fs else "Disable"
             self.logger.info(
                 "PGPackDumper additional info:\n"
                 f"Version: {self.__version__}\n"
                 f"Application name: {self.application_name}\n"
                 f"Compression method: {self.compression_method.name}\n"
                 f"Compression level: {self.compression_level}\n"
+                f"Dump format: {self.dump_format.name}\n"
                 f"Statement timeout: {self.timeout} seconds\n"
                 f"Isolation level: {self.isolation.value}\n"
-                f"Save dumps as S3 objects: {s3}\n"
             )
 
             if self.is_readonly:
@@ -219,7 +219,6 @@ class PGPackDumper(BaseDumper):
                 explain = self.cursor.fetchone()[0]
 
                 return self.logger.info(get_info(
-                    self.dbname,
                     host,
                     kind,
                     explain,
@@ -252,13 +251,6 @@ class PGPackDumper(BaseDumper):
             self.copy_buffer.query = query
             self.copy_buffer.table_name = table_name
             metadata = self.copy_buffer.metadata
-            pgpack = PGPackWriter(
-                fileobj,
-                metadata,
-                self.compression_method,
-                self.compression_level,
-                self.s3fs,
-            )
             columns = make_columns(*metadata_reader(metadata))
             source = DBMetadata(
                 name=self.dbname,
@@ -270,7 +262,19 @@ class PGPackDumper(BaseDumper):
                 version=fileobj.name,
                 columns=columns,
             )
-            self.logger.info(transfer_diagram(source, destination))
+
+            log_diagram(self.logger, self.mode, source, destination)
+
+            if self.mode is DumperMode.TEST:
+                return
+
+            pgpack = PGPackWriter(
+                fileobj,
+                metadata,
+                self.compression_method,
+                self.compression_level,
+                self.dump_format is DumpFormat.S3,
+            )
 
             with self.copy_buffer.copy_to() as copy_to:
                 pgpack.from_bytes(__read_data(copy_to))
@@ -280,7 +284,6 @@ class PGPackDumper(BaseDumper):
             self.logger.info(
                 f"Read pgpack dump from {self.connector.host} done."
             )
-            return True
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperReadError(error)
@@ -296,30 +299,32 @@ class PGPackDumper(BaseDumper):
         """Internal method write_between for generate kwargs to decorator."""
 
         try:
-            if not dumper_src:
-                connect = Connection.connect(**self.connector._asdict())
+            if not dumper_src or dumper_src is self:
+                src_dbname = self.dbname
+                src_version = self.version
+                source_copy_buffer = self.copy_buffer
                 self.logger.info(
                     f"Set new connection for host {self.connector.host}."
                 )
-                source_copy_buffer = CopyBuffer(
+                connect = Connection.connect(**self.connector._asdict())
+                self.copy_buffer = CopyBuffer(
                     connect.cursor(),
                     self.logger,
                     query_src,
                     table_src,
                 )
-                src_dbname = self.dbname
-                src_version = self.version
-                (
-                    self.copy_buffer,
-                    source_copy_buffer,
-                ) = source_copy_buffer, self.copy_buffer
             elif dumper_src.__class__ is PGPackDumper:
                 source_copy_buffer = dumper_src.copy_buffer
-                source_copy_buffer.table_name = table_src
-                source_copy_buffer.query = query_src
                 src_dbname = dumper_src.dbname
                 src_version = dumper_src.version
             else:
+                if self.mode is DumperMode.TEST:
+                    return self.from_rows(
+                        dtype_data=None,
+                        table_name=table_dest,
+                        source=dumper_src._dbmeta,
+                    )
+
                 reader = dumper_src.to_reader(
                     query=query_src,
                     table_name=table_src,
@@ -333,8 +338,8 @@ class PGPackDumper(BaseDumper):
                 self.logger.info(f"Successfully sending {size} bytes.")
                 return reader.close()
 
-            self.copy_buffer.table_name = table_dest
-            self.copy_buffer.query = None
+            source_copy_buffer.table_name = table_src
+            source_copy_buffer.query = query_src
             source = DBMetadata(
                 name=src_dbname,
                 version=src_version,
@@ -342,6 +347,8 @@ class PGPackDumper(BaseDumper):
                     *metadata_reader(source_copy_buffer.metadata),
                 ),
             )
+            self.copy_buffer.table_name = table_dest
+            self.copy_buffer.query = None
             destination = DBMetadata(
                 name=self.dbname,
                 version=self.version,
@@ -349,10 +356,13 @@ class PGPackDumper(BaseDumper):
                     *metadata_reader(self.copy_buffer.metadata),
                 ),
             )
-            self.logger.info(transfer_diagram(source, destination))
+            log_diagram(self.logger, self.mode, source, destination)
+
+            if self.mode is DumperMode.TEST:
+                return
+
             self.copy_buffer.copy_between(source_copy_buffer)
             self.connect.commit()
-            return True
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)
@@ -377,6 +387,10 @@ class PGPackDumper(BaseDumper):
         )
 
         try:
+            if self.mode is DumperMode.TEST:
+                log_diagram(self.logger, self.mode, self._dbmeta)
+                return self._dbmeta
+
             return StreamReader(
                 metadata,
                 self.copy_buffer.copy_to(),
@@ -412,12 +426,16 @@ class PGPackDumper(BaseDumper):
                     *metadata_reader(self.copy_buffer.metadata),
                 ),
             )
-            self.logger.info(transfer_diagram(source, destination))
+
+            log_diagram(self.logger, self.mode, source, destination)
             collect()
+
+            if self.mode is DumperMode.TEST:
+                return pgpack.close()
+
             self.copy_buffer.copy_from(pgpack.to_bytes())
             self.connect.commit()
             pgpack.close()
-            self.refresh()
         except Exception as error:
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteError(error)
@@ -441,7 +459,6 @@ class PGPackDumper(BaseDumper):
         self.copy_buffer.table_name = table_name
         self.copy_buffer.query = None
         columns, pgtypes, pgparam = metadata_reader(self.copy_buffer.metadata)
-        writer = PGCopyWriter(None, pgtypes)
         destination = DBMetadata(
             name=self.dbname,
             version=self.version,
@@ -451,11 +468,16 @@ class PGPackDumper(BaseDumper):
                 pgparam=pgparam,
             ),
         )
-        self.logger.info(transfer_diagram(source, destination))
+
+        log_diagram(self.logger, self.mode, source, destination)
+
+        if self.mode is DumperMode.TEST:
+            return
+
+        writer = PGCopyWriter(None, pgtypes)
         collect()
         self.copy_buffer.copy_from(writer.from_rows(dtype_data))
         self.connect.commit()
-        self.refresh()
 
     def refresh(self) -> None:
         """Refresh session."""

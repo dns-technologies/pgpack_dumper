@@ -4,9 +4,6 @@ from base_dumper import DebugInfo
 from sqlparse import parse
 
 
-MEMORY_FACTOR = 1024
-
-
 def get_query_kind(query: str) -> str:
     """Get kind of query."""
 
@@ -14,7 +11,6 @@ def get_query_kind(query: str) -> str:
 
 
 def get_info(
-    dbname: str,
     host: str,
     kind: str,
     explain: list[dict[str, Any]],
@@ -23,33 +19,25 @@ def get_info(
 
     main_data = explain[0]
     plan: dict[str, Any] = main_data["Plan"]
-    duration = round(main_data["Execution Time"] / 1000)
+    duration = round(main_data["Execution Time"] / 1000, 3)
     rows = plan["Actual Rows"]
     storage = plan["Plan Width"] * rows
-    memory = 0
 
-    if statistics := main_data.get("Slice statistics"):
-        slice_stat: dict[str, Any]
+    def _get_max_memory(node: dict[str, Any] | None) -> int:
+        """Recursively find maximum Peak Memory Usage in plan tree."""
 
-        for slice_stat in statistics:
-            mem_info = slice_stat.get("Executor Memory")
+        if not node:
+            return 0
 
-            if isinstance(mem_info, dict):
-                slice_memory = mem_info.get("Maximum Memory Used", 0)
+        max_memory = node.get("Peak Memory Usage", 0) * 1024
 
-                if dbname == "postgres":
-                    if max_mem := slice_stat.get("Work Maximum Memory"):
-                        slice_memory += max_mem
-            elif isinstance(mem_info, int):
-                slice_memory = mem_info
+        if plans := node.get("Plans"):
+            for subplan in plans:
+                max_memory = max(max_memory, _get_max_memory(subplan))
 
-            memory = max(memory, slice_memory)
+        return max_memory
 
-    if dbname == "greenplum":
-        memory *= MEMORY_FACTOR
-
-    if usage := plan.get("Peak Memory Usage"):
-        memory = memory or usage * MEMORY_FACTOR
+    memory = _get_max_memory(plan)
 
     return DebugInfo(
         host,

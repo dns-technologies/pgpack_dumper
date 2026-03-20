@@ -23,7 +23,7 @@ connector = PGConnector(
 
 dumper = PGPackDumper(
     connector=connector,
-    compression_method=CompressionMethod.ZSTD,  # or CompressionMethod.LZ4 or CompressionMethod.NONE
+    compression_method=CompressionMethod.ZSTD,
 )
 ```
 
