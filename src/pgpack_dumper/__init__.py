@@ -5,6 +5,7 @@ from base_dumper import (
     CompressionMethod,
     DumperLogger,
     DumperMode,
+    DumpFormat,
     IsolationLevel,
     Timeout,
 )
@@ -42,6 +43,7 @@ __all__ = (
     "CopyBufferTableNotDefined",
     "DumperLogger",
     "DumperMode",
+    "DumpFormat",
     "IsolationLevel",
     "PGConnector",
     "PGCopyReader",
