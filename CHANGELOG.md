@@ -8,6 +8,7 @@
 * Add warning for read-only session in DumperMode.DEBUG/TEST
 * Add TEST mode actions
 * Add PGPackDumper.dump_format parameter
+* Add DumpFormat import
 * Remove PGPackDumper.s3fs parameter
 * Improve DEBUG mode initialivation message
 * Fix PGPackDumper.write_between() for same server
