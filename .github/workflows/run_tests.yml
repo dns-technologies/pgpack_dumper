@@ -54,7 +54,7 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest tests/ -v --tb=short
+        pytest tests/ -svv
       env:
         PYTHONPATH: .
 
