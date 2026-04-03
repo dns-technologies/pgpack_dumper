@@ -1,21 +1,32 @@
 """Library for read and write PGPack format between PostgreSQL and file."""
 
 from base_dumper import (
-    CompressionLevel,
-    CompressionMethod,
+    CSVStreamReader,
+    DBConnector,
+    DBMetadata,
+    DebugInfo,
     DumperLogger,
     DumperMode,
     DumpFormat,
     IsolationLevel,
     Timeout,
 )
-from pgcopylib import (
-    PGCopyReader,
-    PGCopyWriter,
+from csvpack import (
+    CSVPackMeta,
+    CSVPackReader,
+    CSVPackWriter,
+    CSVReader,
+    CSVWriter,
+)
+from light_compressor import (
+    CompressionLevel,
+    CompressionMethod,
 )
 from pgpack import (
     PGPackReader,
     PGPackWriter,
+    PGCopyReader,
+    PGCopyWriter,
 )
 
 from .common import (
@@ -41,6 +52,15 @@ __all__ = (
     "CopyBufferError",
     "CopyBufferObjectError",
     "CopyBufferTableNotDefined",
+    "CSVPackMeta",
+    "CSVPackReader",
+    "CSVPackWriter",
+    "CSVReader",
+    "CSVStreamReader",
+    "CSVWriter",
+    "DBConnector",
+    "DBMetadata",
+    "DebugInfo",
     "DumperLogger",
     "DumperMode",
     "DumpFormat",

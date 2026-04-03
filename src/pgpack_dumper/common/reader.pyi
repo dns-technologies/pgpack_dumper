@@ -6,17 +6,19 @@ from psycopg import Copy
 class CopyReader:
     """Read from iterable Copy object."""
 
+    copyobj: Iterable[Copy]
+    iterator: Iterator[bytearray]
+    bufferobj: bytearray
+    first_data: bytes
+    closed: bool
+    total_read: int
+
     def __init__(
         self,
         copyobj: Iterable[Copy],
     ) -> None:
         """Class initialization."""
 
-        self.copyobj: Iterable[Copy]
-        self.iterator: Iterator[bytearray]
-        self.bufferobj: bytearray
-        self.closed: bool
-        self.total_read: int
         ...
 
     def read(self, size: int) -> bytes:

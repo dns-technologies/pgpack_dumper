@@ -1,40 +1,62 @@
-from typing import (
-    Iterable,
-    NoReturn
-)
+from collections.abc import Generator
 
-from pgcopylib import (
+from pgpack import (
     PGCopyReader,
     PGOid,
-)
-from pgpack import (
-    PGPackError,
     PGPackReader,
+    PGParam,
     metadata_reader,
 )
+from pgpack.common import (
+    Size,
+    table_repr,
+)
 from polars import Object
-from psycopg import Copy
 
 from .reader import CopyReader
 
 
-class StreamReader(PGPackReader):
-    """Class for stream read from PostgreSQL/GreenPlum."""
+
+class PGPackStreamReader(PGPackReader):
+    """Class for manipulate uncompressed stream csv object."""
+
+    fileobj: CopyReader
+    metadata: bytes
+    dbname: str
+    version: str
+    columns: list[str]
+    pgtypes: list[PGOid]
+    pgparam: list[PGParam]
+    pgcopy: PGCopyReader | None
+    schema_overrides: dict[str, Object]
 
     def __init__(
         self,
+        fileobj: CopyReader,
         metadata: bytes,
-        copyobj: Iterable[Copy],
+        dbname: str,
+        version: str,
     ) -> None:
         """Class initialization."""
 
+        self.fileobj = fileobj
         self.metadata = metadata
-        self.fileobj = CopyReader(copyobj)
+        self.dbname = dbname
+        self.version = version
         (
             self.columns,
             self.pgtypes,
             self.pgparam,
         ) = metadata_reader(self.metadata)
+
+        try:
+            self.pgcopy = PGCopyReader(
+                self.fileobj,
+                self.pgtypes,
+            )
+        except IndexError:
+            self.pgcopy = None
+
         self.schema_overrides = {
             column: Object
             for column, pgtype in zip(self.columns, self.pgtypes)
@@ -49,54 +71,31 @@ class StreamReader(PGPackReader):
             )
         }
 
-        try:
-            self.pgcopy = PGCopyReader(
-                self.fileobj,
-                self.pgtypes,
-            )
-        except IndexError:
-            raise PGPackError("Empty data returned.")
+    def to_bytes(self) -> Generator[bytes, None, None]:
+        """Get raw stream data."""
 
-    def __str__(self) -> str:
-        """String representation of PGPackReader."""
+        if self.fileobj.tell() <= Size.HEADER_LENS + Size.PGDATA_PROMPT:
+            yield self.fileobj.first_data[:self.fileobj.tell()]
 
-        def to_col(text: str) -> str:
-            """Format string element."""
+        while chunk := self.fileobj.read(Size.CHUNK_SIZE):
+            yield chunk
 
-            text = text[:14] + "…" if len(text) > 15 else text
-            return f" {text: <15} "
+    def tell(self) -> int:
+        """Return current position."""
 
-        empty_line = (
-            "│-----------------+-----------------│"
-        )
-        end_line = (
-            "└─────────────────┴─────────────────┘"
-        )
-        _str = [
+        return self.fileobj.tell()
+
+    def __repr__(self) -> str:
+        """String representation of CSVPackReader."""
+
+        return table_repr(
+            self.columns,
+            self.dtypes,
             "<PostgreSQL/GreenPlum stream reader>",
-            "┌─────────────────┬─────────────────┐",
-            "│ Column Name     │ PostgreSQL Type │",
-            "╞═════════════════╪═════════════════╡",
-        ]
-
-        for column, pgtype in zip(self.columns, self.pgtypes):
-            _str.append(
-                f"│{to_col(column)}│{to_col(pgtype.name)}│",
-            )
-            _str.append(empty_line)
-
-        _str[-1] = end_line
-        return "\n".join(_str) + f"""
-Total columns: {len(self.columns)}
-Readed rows: {self.pgcopy.num_rows}
-"""
-
-    def to_bytes(self) -> NoReturn:
-        """Get raw unpacked pgcopy data."""
-
-        raise NotImplementedError("Don't support in stream mode.")
-
-    def close(self) -> None:
-        """Close stream object."""
-
-        self.fileobj.close()
+            [
+                f"Total columns: {len(self.columns)}",
+                f"Readed rows: {self.pgcopy.num_rows if self.pgcopy else 0}",
+                f"Source: {self.dbname}",
+                f"Version: {self.version}",
+            ],
+        )

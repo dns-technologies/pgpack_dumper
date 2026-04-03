@@ -10,6 +10,7 @@ cdef class CopyReader:
         self.copyobj = copyobj
         self.iterator = iter(self.copyobj.__enter__())
         self.bufferobj = bytearray()
+        self.first_data = b""
         self.closed = False
         self.total_read = 0
 
@@ -34,10 +35,13 @@ cdef class CopyReader:
             result = bytes(self.bufferobj[:size])
             del self.bufferobj[:size]
             self.total_read += len(result)
+
+            if self.total_read <= 25:
+                self.first_data += result
+
             return result
 
         except StopIteration:
-            self.close()
             buffer_len = len(self.bufferobj)
 
             if buffer_len > 0:

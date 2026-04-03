@@ -1,2 +1,2 @@
 copy {table_name}
-from stdin with (format binary);
+from stdin with (format {dump_format});

@@ -1,2 +1,2 @@
 copy {table_name}
-to stdout with (format binary);
+to stdout with (format {dump_format});

@@ -4,6 +4,7 @@ from base_dumper import (
     BaseDumperValueError,
 )
 
+
 class CopyBufferError(BaseDumperError):
     """CopyBuffer base error."""
 
@@ -30,3 +31,7 @@ class PGPackDumperWriteError(PGPackDumperError):
 
 class PGPackDumperWriteBetweenError(PGPackDumperWriteError):
     """PGPackDumper write between error."""
+
+
+class PGPackColumnDataSendError(PGPackDumperError, TimeoutError):
+    """Data send error where operation frozen."""

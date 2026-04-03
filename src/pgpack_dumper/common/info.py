@@ -1,13 +1,6 @@
 from typing import Any
 
 from base_dumper import DebugInfo
-from sqlparse import parse
-
-
-def get_query_kind(query: str) -> str:
-    """Get kind of query."""
-
-    return parse(query)[0].get_type().capitalize()
 
 
 def get_info(

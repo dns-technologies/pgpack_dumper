@@ -1,6 +1,7 @@
 from pathlib import Path
 from re import match
 
+
 PATTERN = r"\(select \* from (.*)\)|(.*)"
 
 

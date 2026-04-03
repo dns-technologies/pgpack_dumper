@@ -1,5 +1,29 @@
 # Version History
 
+## 0.3.7.dev0
+
+* Developer release (not public to pip)
+* Drop depends pgcopylib
+* Add pytests
+* Add depends csvpack==0.1.0.dev3
+* Add HiddenPGPackDumper for write data to the same server
+* Add LibSelector and LibVariant classes for associate Readers/Writers
+* Update depends base_dumper==0.2.0.dev3
+* Update depends pgpack==0.3.3.dev4
+* Update depends light-compressor==0.1.1.dev1
+* Change copy_from.sql and copy_to.sql to provide both formats (pgcopy and csv)
+* Refactor read_metadata() function
+* Refactor StreamReader
+* Refactor reader.pyi
+* Refactor CopyBuffer
+* Refactor errors
+* Fix CopyReader read from CSV
+* Fix StreamReader.to_bytes() method to work with both dump formats (pgcopy and csv)
+* Fix queries
+* Move query_kind() function into BaseDumper repository
+* Improve PGPackDumper.mode_action()
+* More other minor fixes
+
 ## 0.3.6.dev3
 
 * Developer release (not public to pip)

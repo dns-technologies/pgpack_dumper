@@ -13,22 +13,23 @@ from .errors import (
     PGPackDumperWriteError,
     PGPackDumperWriteBetweenError,
 )
-from .metadata import read_metadata
-from .info import (
-    get_info,
-    get_query_kind,
+from .metadata import (
+    csvpack_meta,
+    read_metadata,
 )
+from .info import get_info
 from .query import (
     query_path,
     query_template,
     search_object,
 )
 from .reader import CopyReader
+from .selector import LibSelector
 from .setters import (
     isolation_level,
     statement_seconds,
 )
-from .stream import StreamReader
+from .stream import PGPackStreamReader
 from .structs import PGObject
 
 
@@ -38,14 +39,16 @@ __all__ = (
     "CopyBufferObjectError",
     "CopyBufferTableNotDefined",
     "CopyReader",
+    "LibSelector",
     "PGConnector",
     "PGObject",
     "PGPackDumperError",
     "PGPackDumperReadError",
     "PGPackDumperWriteBetweenError",
     "PGPackDumperWriteError",
-    "StreamReader",
+    "PGPackStreamReader",
     "defines",
+    "csvpack_meta",
     "get_info",
     "get_query_kind",
     "isolation_level",

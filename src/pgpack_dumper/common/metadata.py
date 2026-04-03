@@ -1,6 +1,9 @@
 from json import dumps
 
 from base_dumper import random_name
+from csvpack import CSVPackMeta
+from pgpack import metadata_reader
+from pgpack.common import compile_pgtype
 from psycopg import Cursor
 
 from .query import query_template
@@ -18,8 +21,7 @@ def read_metadata(
         raise ValueError("No object defined.")
 
     if query:
-
-        query = query.strip().strip(";")
+        query = query.strip("; \t\n\r")
 
         if "limit" in query.lower():
             query = f"select * from ({query}\n) as {random_name()}"
@@ -67,3 +69,22 @@ def read_metadata(
         cursor.execute(f"drop table if exists {table_name};")
 
     return metadata
+
+
+def csvpack_meta(
+    metadata: bytes,
+    source: str,
+    version: str,
+) -> CSVPackMeta:
+    """Generate CSVPackMeta object from PGPck metadata."""
+
+    columns, pgtypes, params  = metadata_reader(metadata)
+    return CSVPackMeta.from_params(
+        source,
+        version,
+        columns,
+        [
+            compile_pgtype(pgtype, param)
+            for pgtype, param in zip(pgtypes, params)
+        ],
+    )

@@ -1,7 +1,10 @@
 from collections import OrderedDict
 
-from pgcopylib import PGOid
-from pgpack.common import PGParam
+from pgpack import PGOid
+from pgpack.common import (
+    PGParam,
+    compile_pgtype,
+)
 
 
 def make_columns(
@@ -13,18 +16,11 @@ def make_columns(
 
     columns = OrderedDict()
 
-    for col_name, pgtype, param in zip(
+    for column, pgtype, param in zip(
         list_columns,
         pgtypes,
         pgparam,
     ):
-        col_type = pgtype.name
-
-        if pgtype is PGOid.bpchar:
-            col_type = f"{col_type}({param.length})"
-        elif pgtype is PGOid.numeric:
-            col_type = f"{col_type}({param.length}, {param.scale})"
-
-        columns[col_name] = col_type
+        columns[column] = compile_pgtype(pgtype, param)
 
     return columns
