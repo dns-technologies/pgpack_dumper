@@ -379,7 +379,6 @@ class PGPackDumper(BaseDumper):
                     self.timeout = parent.timeout
                     self.isolation = parent.isolation
 
-
             if not dumper_src:
                 self.logger.info(
                     f"Set new connection for host {self.connector.host}.",
@@ -399,7 +398,7 @@ class PGPackDumper(BaseDumper):
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)
         finally:
-                if dumper_src and isinstance(dumper_src, HiddenPGPackDumper):
+                if isinstance(dumper_src, HiddenPGPackDumper):
                     dumper_src.close()
 
     @multiquery

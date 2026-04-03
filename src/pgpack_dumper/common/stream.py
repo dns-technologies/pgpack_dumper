@@ -16,7 +16,6 @@ from polars import Object
 from .reader import CopyReader
 
 
-
 class PGPackStreamReader(PGPackReader):
     """Class for manipulate uncompressed stream csv object."""
 

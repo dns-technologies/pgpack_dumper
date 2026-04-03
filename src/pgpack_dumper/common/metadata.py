@@ -78,7 +78,7 @@ def csvpack_meta(
 ) -> CSVPackMeta:
     """Generate CSVPackMeta object from PGPck metadata."""
 
-    columns, pgtypes, params  = metadata_reader(metadata)
+    columns, pgtypes, params = metadata_reader(metadata)
     return CSVPackMeta.from_params(
         source,
         version,

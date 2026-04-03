@@ -9,6 +9,7 @@ TIME_FACTOR = {
     "d": 86_400,
 }
 
+
 def statement_seconds(statement: str) -> int | float:
     """Get seconds from statement_timeout."""
 

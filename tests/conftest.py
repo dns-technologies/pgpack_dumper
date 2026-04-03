@@ -465,8 +465,8 @@ class FakeDumper(BaseDumper):
         self,
         query: str = None,
         table_name: str = None,
-        compression_method = None,
-        do_compress_action = False,
+        compression_method: object = None,
+        do_compress_action: object = False,
     ):
         _ = compression_method, do_compress_action
         self._written_data.append(
