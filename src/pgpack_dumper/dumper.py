@@ -398,8 +398,8 @@ class PGPackDumper(BaseDumper):
             self.logger.error(f"{error.__class__.__name__}: {error}")
             raise PGPackDumperWriteBetweenError(error)
         finally:
-                if isinstance(dumper_src, HiddenPGPackDumper):
-                    dumper_src.close()
+            if dumper_src and isinstance(dumper_src, HiddenPGPackDumper):
+                dumper_src.close()
 
     @multiquery
     def _to_reader(
