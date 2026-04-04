@@ -8,6 +8,7 @@
 * Update depends pgpack==0.3.3.dev5
 * Refactor PGPackDumper methods
 * Add autocommit=True parameter into PGPackDumper.connect
+* Add raise PGPackDumperWriteError to PGPackDumper.from_bytes() method without source attribute
 * Update README.md
 
 ## 0.3.7.dev0

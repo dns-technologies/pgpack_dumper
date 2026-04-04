@@ -536,6 +536,9 @@ class PGPackDumper(BaseDumper):
     ) -> None:
         """Write from iterable bytes into Server object."""
 
+        if not source:
+            raise PGPackDumperWriteError("Source metadata not define.")
+
         if not isinstance(source, DBMetadata):
             source = self.__dbmeta(source)
 
