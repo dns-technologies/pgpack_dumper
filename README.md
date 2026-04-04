@@ -281,9 +281,9 @@ Transfer data diagram:
 ## Dependencies
 
 - Python >= 3.10
-- ```base_dumper``` >= 0.2.0.dev3
-- ```pgpack``` >= 0.3.3.dev4
-- ```csvpack``` >= 0.1.0.dev3
+- ```base_dumper``` >= 0.2.0.dev4
+- ```csvpack``` >= 0.1.0.dev4
+- ```pgpack``` >= 0.3.3.dev5
 - ```psycopg``` >= 3.3.3
 - ```light-compressor``` >= 0.1.1.dev1
 

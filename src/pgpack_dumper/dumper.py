@@ -112,6 +112,7 @@ class PGPackDumper(BaseDumper):
         try:
             self.application_name = f"{self.__class__.__name__}/{__version__}"
             self.connect = Connection.connect(
+                autocommit=True,
                 application_name=self.application_name,
                 **self.connector._asdict(),
             )
@@ -278,7 +279,6 @@ class PGPackDumper(BaseDumper):
 
                 return self.logger.info(get_info(host, kind, explain))
 
-            self.cursor.execute("commit")
             return action_data(*args, **kwargs)
 
     def metadata(
@@ -318,8 +318,8 @@ class PGPackDumper(BaseDumper):
                 metadata = csvpack_meta(metadata, self.dbname, self.version)
 
             writer: WriterType = LibSelector[self.dump_format.name].write(
-                fileobj,
                 metadata,
+                fileobj,
                 self.compression_method,
                 self.compression_level,
                 self.s3_file,
@@ -366,6 +366,7 @@ class PGPackDumper(BaseDumper):
                     self.logger = parent.logger
                     self.is_readonly = parent.is_readonly
                     self.connect = Connection.connect(
+                        autocommit=True,
                         application_name=self.application_name,
                         **self.connector._asdict(),
                     )
@@ -424,8 +425,8 @@ class PGPackDumper(BaseDumper):
                 return CSVStreamReader(fileobj, db_metadata)
 
             return PGPackStreamReader(
-                metadata,
                 fileobj,
+                metadata,
                 self.dbname,
                 self.version,
             )
@@ -509,14 +510,14 @@ class PGPackDumper(BaseDumper):
 
         if self.dump_format is DumpFormat.BINARY:
             pgtypes = metadata_reader(metadata)[1]
-            writer = PGCopyWriter(None, pgtypes)
+            writer = PGCopyWriter(pgtypes)
         elif self.dump_format is DumpFormat.CSV:
             csv_meta = csvpack_meta(
                 metadata,
                 self.dbname,
                 self.version,
             )
-            writer = CSVWriter(None, *csv_meta[4:])
+            writer = CSVWriter(*csv_meta[4:])
         else:
             error = f"Unknown dump format {self.dump_format}"
             self.logger.error(f"PGPackDumperWriteError: {error}")

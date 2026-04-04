@@ -1,5 +1,15 @@
 # Version History
 
+## 0.3.7.dev1
+
+* Developer release (not public to pip)
+* Update depends base_dumper==0.2.0.dev4
+* Update depends csvpack==0.1.0.dev4
+* Update depends pgpack==0.3.3.dev5
+* Refactor PGPackDumper methods
+* Add autocommit=True parameter into PGPackDumper.connect
+* Update README.md
+
 ## 0.3.7.dev0
 
 * Developer release (not public to pip)
