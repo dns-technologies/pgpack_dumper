@@ -69,7 +69,6 @@ class PGPackDumper(BaseDumper):
 
     connector: PGConnector
     compression_method: CompressionMethod
-    compression_level: int
     logger: Logger
     timeout: int
     isolation: IsolationLevel
