@@ -35,7 +35,7 @@ from csvpack import CSVWriter
 from pgpack import (
     PGCopyWriter,
     PGPackError,
-    metadata_reader,
+    PGPackMeta,
 )
 from psycopg import (
     Connection,
@@ -177,10 +177,15 @@ class PGPackDumper(BaseDumper):
     def __dbmeta(self, metadata: bytes) -> DBMetadata:
         """Generate DBMetadata from PGPack metadata."""
 
+        pg_meta = PGPackMeta.from_bytes(metadata)
         return DBMetadata(
             name=self.dbname,
             version=self.version,
-            columns=make_columns(*metadata_reader(metadata)),
+            columns=make_columns(
+                pg_meta.columns,
+                pg_meta.pgtypes,
+                pg_meta.pgparams,
+            ),
         )
 
     def __read_data(
@@ -471,13 +476,17 @@ class PGPackDumper(BaseDumper):
                     for column, dtype in zip(reader.columns, reader.dtypes)
                 },
             )
+            pg_meta = PGPackMeta.from_bytes(self.metadata(
+                table_name=table_name,
+                reader_meta=True,
+            ))
             destination = DBMetadata(
                 name=self.dbname,
                 version=self.version,
                 columns=make_columns(
-                    *metadata_reader(
-                        self.metadata(table_name=table_name, reader_meta=True)
-                    ),
+                    pg_meta.columns,
+                    pg_meta.pgtypes,
+                    pg_meta.pgparams,
                 ),
             )
             log_table(self.logger, self.mode, source, destination)
@@ -508,8 +517,8 @@ class PGPackDumper(BaseDumper):
         destination = self.__dbmeta(metadata)
 
         if self.dump_format is DumpFormat.BINARY:
-            pgtypes = metadata_reader(metadata)[1]
-            writer = PGCopyWriter(pgtypes)
+            pg_meta = PGPackMeta.from_bytes(metadata)
+            writer = PGCopyWriter(pg_meta.pgcopy_metadata)
         elif self.dump_format is DumpFormat.CSV:
             csv_meta = csvpack_meta(
                 metadata,

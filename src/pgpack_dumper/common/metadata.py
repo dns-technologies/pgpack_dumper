@@ -2,7 +2,7 @@ from json import dumps
 
 from base_dumper import random_name
 from csvpack import CSVPackMeta
-from pgpack import metadata_reader
+from pgpack import PGPackMeta
 from pgpack.common import compile_pgtype
 from psycopg import Cursor
 
@@ -29,20 +29,15 @@ def read_metadata(
         if is_readonly:
             cursor.execute(f"{query} limit 0")
             metadata = [
-                [
-                    column_number,
-                    [
-                        column.name,
-                        column.type_code,
-                        column.internal_size or
-                        column.precision or
-                        column.display_size or -1,
-                        column.scale or 0,
-                        int("[]" in str(column)),
-                    ]
-                ]
-                for column_number, column in
-                enumerate(cursor.description, 1)
+                {column.name: {
+                    "oid": column.type_code,
+                    "length": column.internal_size or
+                    column.precision or
+                    column.display_size or -1,
+                    "scale": column.scale or 0,
+                    "nested": int("[]" in str(column)),
+                }}
+                for column in cursor.description
             ]
 
             return dumps(
@@ -78,13 +73,16 @@ def csvpack_meta(
 ) -> CSVPackMeta:
     """Generate CSVPackMeta object from PGPck metadata."""
 
-    columns, pgtypes, params = metadata_reader(metadata)
+    pgpack_meta = PGPackMeta.from_bytes(metadata)
     return CSVPackMeta.from_params(
         source,
         version,
-        columns,
+        pgpack_meta.columns,
         [
             compile_pgtype(pgtype, param)
-            for pgtype, param in zip(pgtypes, params)
+            for pgtype, param in zip(
+                pgpack_meta.pgtypes,
+                pgpack_meta.pgparams,
+            )
         ],
     )

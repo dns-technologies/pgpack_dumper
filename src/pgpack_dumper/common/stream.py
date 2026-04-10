@@ -3,9 +3,9 @@ from collections.abc import Generator
 from pgpack import (
     PGCopyReader,
     PGOid,
+    PGPackMeta,
     PGPackReader,
     PGParam,
-    metadata_reader,
 )
 from pgpack.common import (
     Size,
@@ -20,7 +20,7 @@ class PGPackStreamReader(PGPackReader):
     """Class for manipulate uncompressed stream csv object."""
 
     fileobj: CopyReader
-    metadata: bytes
+    metadata: PGPackMeta
     dbname: str
     version: str
     columns: list[str]
@@ -39,14 +39,12 @@ class PGPackStreamReader(PGPackReader):
         """Class initialization."""
 
         self.fileobj = fileobj
-        self.metadata = metadata
         self.dbname = dbname
         self.version = version
-        (
-            self.columns,
-            self.pgtypes,
-            self.pgparam,
-        ) = metadata_reader(self.metadata)
+        self.metadata = PGPackMeta.from_bytes(metadata)
+        self.columns = self.metadata.columns
+        self.pgtypes = self.metadata.pgtypes
+        self.pgparam = self.metadata.pgparams
 
         try:
             self.pgcopy = PGCopyReader(

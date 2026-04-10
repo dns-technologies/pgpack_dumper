@@ -1,5 +1,18 @@
 # Version History
 
+## 0.3.7.dev3
+
+* Developer release (not public to pip)
+* Update depends base_dumper==0.2.0.dev6
+* Update depends csvpack==0.1.0.dev6
+* Update depends pgpack==0.3.3.dev7
+* Change attributes.sql
+* Change read_metadata() function
+* Refactor csvpack_meta() function
+* Refactor PGPackDumper
+* New pgpack metadata structure
+* Update README.md
+
 ## 0.3.7.dev2
 
 * Developer release (not public to pip)
