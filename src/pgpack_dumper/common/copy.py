@@ -1,4 +1,5 @@
 from logging import Logger
+from time import time
 from typing import (
     BinaryIO,
     Generator,
@@ -70,6 +71,7 @@ class CopyBuffer:
     ) -> int:
         """Write data into binary object."""
 
+        start = time()
         size = 0
 
         for bytes_data in source:
@@ -77,6 +79,9 @@ class CopyBuffer:
             destination.write(bytes_data)
             del bytes_data
 
+        duration = round(time() - start, 3)
+        self.logger.info(f"Duration time is {duration} seconds.")
+        self.logger.info(f"Successfully sending {size} bytes.")
         return size
 
     def raise_if_not_stream(self) -> None:
@@ -158,9 +163,8 @@ class CopyBuffer:
                 dump_format=self.dump_format,
             )
         ) as cp:
-            size = self.object_writer(copyobj, cp)
+            self.object_writer(copyobj, cp)
 
-        self.logger.info(f"Successfully sending {size} bytes.")
         self.logger.info(
             f"Write into {host}.{table_name} done.".replace('"', ""),
         )
@@ -190,9 +194,8 @@ class CopyBuffer:
                     dump_format=self.dump_format,
                 )
             ) as copy_from:
-                size = self.object_writer(copy_from, copy_to)
+                self.object_writer(copy_from, copy_to)
 
-            self.logger.info(f"Successfully sending {size} bytes.")
             message = (
                 f"Copy {source_object} from {source_host}"
                 f"into {destination_host}.{table_dest} done."

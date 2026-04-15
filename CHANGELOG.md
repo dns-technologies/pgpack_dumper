@@ -10,6 +10,7 @@
 * Change read_metadata() function
 * Refactor csvpack_meta() function
 * Refactor PGPackDumper
+* Refactor CopyBuffer
 * New pgpack metadata structure
 * Update README.md
 
