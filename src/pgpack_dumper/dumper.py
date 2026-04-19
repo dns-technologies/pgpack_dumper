@@ -174,7 +174,7 @@ class PGPackDumper(BaseDumper):
             if self.is_readonly:
                 self.logger.warning("Read-only session. Write don't work!")
 
-    def __dbmeta(self, metadata: bytes) -> DBMetadata:
+    def _dbmeta(self, metadata: bytes) -> DBMetadata:
         """Generate DBMetadata from PGPack metadata."""
 
         pg_meta = PGPackMeta.from_bytes(metadata)
@@ -298,7 +298,7 @@ class PGPackDumper(BaseDumper):
         if reader_meta:
             return metadata
 
-        return self.__dbmeta(metadata)
+        return self._dbmeta(metadata)
 
     @multiquery
     def _read_dump(
@@ -311,7 +311,7 @@ class PGPackDumper(BaseDumper):
 
         try:
             metadata = self.metadata(query, table_name, True)
-            source = self.__dbmeta(metadata)
+            source = self._dbmeta(metadata)
             destination = DBMetadata("file", fileobj.name, source.columns)
             log_table(self.logger, self.mode, source, destination)
 
@@ -419,7 +419,7 @@ class PGPackDumper(BaseDumper):
             if not metadata:
                 metadata = self.metadata(query, table_name, True)
 
-            db_metadata = self.__dbmeta(metadata)
+            db_metadata = self._dbmeta(metadata)
             fileobj = self._to_fileobj(query, table_name, db_metadata)
 
             if isinstance(fileobj, DBMetadata):
@@ -514,7 +514,7 @@ class PGPackDumper(BaseDumper):
             source, dtype_data = self._db_meta_from_iter(dtype_data)
 
         metadata = self.metadata(table_name=table_name, reader_meta=True)
-        destination = self.__dbmeta(metadata)
+        destination = self._dbmeta(metadata)
 
         if self.dump_format is DumpFormat.BINARY:
             pg_meta = PGPackMeta.from_bytes(metadata)
@@ -548,7 +548,7 @@ class PGPackDumper(BaseDumper):
             raise PGPackDumperWriteError("Source metadata not define.")
 
         if not isinstance(source, DBMetadata):
-            source = self.__dbmeta(source)
+            source = self._dbmeta(source)
 
         if not destination:
             destination = self.metadata(table_name=table_name)
