@@ -47,12 +47,12 @@ class PGPackStreamReader(PGPackReader):
         self.pgparam = self.metadata.pgparams
 
         try:
-            self.pgcopy = PGCopyReader(
+            self._reader = PGCopyReader(
                 self.fileobj,
                 self.pgtypes,
             )
         except IndexError:
-            self.pgcopy = None
+            self._reader = None
 
         self.schema_overrides = {
             column: Object
@@ -91,7 +91,7 @@ class PGPackStreamReader(PGPackReader):
             "<PostgreSQL/GreenPlum stream reader>",
             [
                 f"Total columns: {len(self.columns)}",
-                f"Readed rows: {self.pgcopy.num_rows if self.pgcopy else 0}",
+                f"Readed rows: {self._reader.num_rows if self._reader else 0}",
                 f"Source: {self.dbname}",
                 f"Version: {self.version}",
             ],
