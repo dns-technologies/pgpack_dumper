@@ -12,6 +12,7 @@
 * Refactor PGPackDumper
 * Refactor CopyBuffer
 * New pgpack metadata structure
+* Improve PGPackStreamReader
 * Update README.md
 
 ## 0.3.7.dev2
