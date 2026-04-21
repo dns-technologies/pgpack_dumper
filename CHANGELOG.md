@@ -8,6 +8,7 @@
 * Update depends pgpack==0.3.3.dev7
 * Change attributes.sql
 * Change read_metadata() function
+* Fix PGPackDumper.mode_action() method
 * Refactor csvpack_meta() function
 * Refactor PGPackDumper
 * Refactor CopyBuffer

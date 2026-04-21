@@ -268,7 +268,8 @@ class PGPackDumper(BaseDumper):
                     start_time = time()
                     self.cursor.execute(action_data)
                     duration = round(time() - start_time, 3)
-                    return self.logger.info(DebugInfo(host, kind, duration))
+                    self.logger.info(str(DebugInfo(host, kind, duration)))
+                    return
 
                 query = (
                     "explain (analyze, verbose, buffers, settings, "
@@ -281,7 +282,8 @@ class PGPackDumper(BaseDumper):
                 self.cursor.execute(query)
                 explain = self.cursor.fetchone()[0]
 
-                return self.logger.info(get_info(host, kind, explain))
+                self.logger.info(str(get_info(host, kind, explain)))
+                return
 
             return action_data(*args, **kwargs)
 
