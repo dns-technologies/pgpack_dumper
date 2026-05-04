@@ -1,0 +1,1 @@
+TIMESTAMP = "::timestamp(0)"

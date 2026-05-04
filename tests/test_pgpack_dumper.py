@@ -45,10 +45,10 @@ class TestPGPackDumper:
         """Тестирует установку уровня изоляции."""
 
         original_isolation = dumper.isolation
-        dumper.isolation = IsolationLevel.serializable
+        dumper.isolation = IsolationLevel.SERIALIZABLE
         new_isolation = dumper.isolation
         assert new_isolation in [  # noqa: S101
-            IsolationLevel.serializable,
+            IsolationLevel.SERIALIZABLE,
             original_isolation,
         ]
         dumper.isolation = original_isolation

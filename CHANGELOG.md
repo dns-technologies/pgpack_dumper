@@ -1,5 +1,21 @@
 # Version History
 
+## 0.3.8.dev0
+
+* Developer release (not public to pip)
+* Add depends pglast>=7.13
+* Add patch_csv_timestamp() function
+* Add build wheels for manylinux aarch64
+* Add patch_csv tests
+* Update build_wheels.yml
+* Update depends base_dumper==0.3.0.dev0
+* Update depends csvpack==0.2.0.dev0
+* Update depends pgpack==0.4.0.dev0
+* Update depends psycopg-binary>=3.3.4
+* Update depends psycopg>=3.3.4
+* Update README.md
+* Update pytests
+
 ## 0.3.7.dev3
 
 * Developer release (not public to pip)

@@ -3,13 +3,11 @@ include README.md
 include LICENSE
 
 include src/pgpack_dumper/common/queries/*.sql
-include src/pgpack_dumper/common/*.pyx
 include src/pgpack_dumper/common/*.pyi
-include src/pgpack_dumper/common/*.pxd
+include src/pgpack_dumper/common/*.pyd
 recursive-include src/pgpack_dumper *.sql
-recursive-include src/pgpack_dumper *.pyx
 recursive-include src/pgpack_dumper *.pyi
-recursive-include src/pgpack_dumper *.pxd
+recursive-include src/pgpack_dumper *.pyd
 
 exclude src/pgpack_dumper/common/*.c
 recursive-exclude src/pgpack_dumper *.c

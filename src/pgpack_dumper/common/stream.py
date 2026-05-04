@@ -11,6 +11,7 @@ from pgpack.common import (
     Size,
     table_repr,
 )
+from pgpack.pgcopylib import pandas_astype
 from polars import Object
 
 from .reader import CopyReader
@@ -28,6 +29,7 @@ class PGPackStreamReader(PGPackReader):
     pgparam: list[PGParam]
     pgcopy: PGCopyReader | None
     schema_overrides: dict[str, Object]
+    pandas_astype: dict[str, str]
 
     def __init__(
         self,
@@ -67,6 +69,7 @@ class PGPackStreamReader(PGPackReader):
                 PGOid._tsvector,
             )
         }
+        self.pandas_astype = pandas_astype(self.columns, self.postgres_dtype)
 
     def to_bytes(self) -> Generator[bytes, None, None]:
         """Get raw stream data."""

@@ -205,7 +205,7 @@ Main class for database operations.
 | ```compression_level``` | ```int``` | ```3``` | Compression level (1-22 for ZSTD) |
 | ```logger``` | ```Logger``` | ```None``` | Custom logger instance |
 | ```timeout``` | ```int``` | ```None``` | Statement timeout in seconds |
-| ```isolation``` | ```IsolationLevel``` | ```committed``` | Transaction isolation level |
+| ```isolation``` | ```IsolationLevel``` | ```COMMITED``` | Transaction isolation level |
 | ```mode``` | ```DumperMode``` | ```PROD``` | Dumper operation mode |
 | ```dump_format``` | ```DumpFormat``` | ```BINARY``` | Output format |
 | ```s3_file``` | ```bool``` | ```False``` | S3 streaming mode |
@@ -281,11 +281,11 @@ Transfer data diagram:
 ## Dependencies
 
 - Python >= 3.10
-- ```base_dumper``` >= 0.2.0.dev5
-- ```csvpack``` >= 0.1.0.dev5
-- ```pgpack``` >= 0.3.3.dev6
-- ```psycopg``` >= 3.3.3
-- ```light-compressor``` >= 0.1.1.dev2
+- ```base_dumper``` >= 0.3.0.dev0
+- ```csvpack``` >= 0.2.0.dev0
+- ```pgpack``` >= 0.4.0.dev0
+- ```psycopg``` >= 3.3.4
+- ```light-compressor``` >= 0.1.1.dev3
 
 ## License
 

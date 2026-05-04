@@ -61,6 +61,7 @@ from .common import (
     query_template,
     statement_seconds,
 )
+from .patch import patch_csv_timestamp
 from .version import __version__
 
 
@@ -75,6 +76,7 @@ class PGPackDumper(BaseDumper):
     mode: DumperMode
     dump_format: DumpFormat
     s3_file: bool
+    use_remote_if_available: bool
     application_name: str
     connect: Connection
     cursor: Cursor
@@ -87,10 +89,11 @@ class PGPackDumper(BaseDumper):
         compression_level: int = CompressionLevel.ZSTD_DEFAULT,
         logger: Logger | None = None,
         timeout: int | None = None,
-        isolation: IsolationLevel = IsolationLevel.committed,
+        isolation: IsolationLevel = IsolationLevel.COMMITTED,
         mode: DumperMode = DumperMode.PROD,
         dump_format: DumpFormat = DumpFormat.BINARY,
         s3_file: bool = False,
+        use_remote_if_available: bool = True,
     ) -> None:
         """Class initialization."""
 
@@ -106,6 +109,7 @@ class PGPackDumper(BaseDumper):
             mode,
             dump_format,
             s3_file,
+            use_remote_if_available,
         )
 
         try:
@@ -455,6 +459,13 @@ class PGPackDumper(BaseDumper):
 
             log_table(self.logger, self.mode, metadata)
             return metadata
+
+        if self.is_between and self.dump_format is DumpFormat.CSV:
+            query, table_name = patch_csv_timestamp(
+                query,
+                table_name,
+                metadata.columns,
+            )
 
         copyobj = self.copy_buffer.copy_to(query, table_name)
         return CopyReader(copyobj)

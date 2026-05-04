@@ -15,7 +15,7 @@ extensions = [
 
 setup(
     name="pgpack_dumper",
-    version="0.3.7.dev3",
+    version="0.3.8.dev0",
     package_dir={"": "src"},
     ext_modules=cythonize(extensions, language_level="3"),
     packages=[
@@ -24,10 +24,7 @@ setup(
     ],
     package_data={
         "pgpack_dumper": [
-            "**/*.pyx",
-            "**/*.pxd",
             "**/*.sql",
-            "*.pxd",
             "*.pyd",
             "*.pyi",
             "*.md",
