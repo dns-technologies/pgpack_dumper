@@ -206,11 +206,63 @@ def __nested_columns_list(
     return nested
 
 
+def __patch_stmt(
+    patched_query: StringIO,
+    query: str,
+    stmt: dict,
+    column: str | list[str],
+    patch_items: list[str],
+    last_position: int,
+    num: int,
+    total: int,
+) -> int:
+    res_class = __column_class(stmt)
+    name = __column_name(stmt)
+    start = __column_start_position(stmt, res_class, query)
+    end = __column_end_position(query, start, res_class, name)
+
+    if __is_star(stmt):
+        patched_query.write(query[last_position:start])
+        col_parts = []
+
+        for col in column:
+
+            if col in patch_items:
+                col_parts.append(f'"{col}"{TIMESTAMP}')
+            else:
+                col_parts.append(f'"{col}"')
+
+        patched_query.write(", ".join(col_parts))
+
+        if num < total and col_parts and query[end] != ",":
+            patched_query.write(",")
+
+    elif column in patch_items:
+        patched_query.write(query[last_position:start])
+        column_expr = query[start:end]
+
+        if TIMESTAMP in column_expr:
+            patched_query.write(column_expr)
+        elif (
+            res_class in (ResClass.CAST, ResClass.EXPR)
+            and column_expr[0] != "("
+        ):
+            patched_query.write(f"({column_expr}){TIMESTAMP}")
+        else:
+            patched_query.write(f"{column_expr}{TIMESTAMP}")
+
+    else:
+        patched_query.write(query[last_position:end])
+
+    return end
+
+
 def patch_csv_timestamp(
     query: str | None,
     table: str | None,
     columns: dict[str, str],
 ) -> tuple[str, ...]:
+
     if not query and not table:
         raise Error.CSVPatcherValueError("Query or table not define.")
 
@@ -222,26 +274,17 @@ def patch_csv_timestamp(
             "Columns must be dict with {column_name: column_value} structure.",
         )
 
-    patch_items: list[str] = []
-
-    for column, dtype in columns.items():
-        if dtype.startswith("timestamp"):
-            patch_items.append(column)
+    patch_items = [c for c, t in columns.items() if t.startswith("timestamp")]
 
     if not patch_items:
         return query, table
 
     if not query:
-        select_parts = []
-
-        for column in columns:
-            if column in patch_items:
-                select_parts.append(f"\"{column}\"{TIMESTAMP}")
-            else:
-                select_parts.append(f"\"{column}\"")
-
-        column_list = ", ".join(select_parts)
-        return f"SELECT {column_list} FROM {table}", table
+        select_parts = [
+            f'"{c}"{TIMESTAMP}' if c in patch_items else f'"{c}"'
+            for c in columns
+        ]
+        return f"SELECT {', '.join(select_parts)} FROM {table}", table
 
     patched_query = StringIO()
     stmts = loads(parse_sql_json(query))["stmts"]
@@ -255,45 +298,13 @@ def patch_csv_timestamp(
         raise Error.CSVPatcherValueError("Columns not match.")
 
     last_position = 0
+    total = len(column_list)
 
     for num, (column, stmt) in enumerate(zip(column_list, select), 1):
-        res_class = __column_class(stmt)
-        name = __column_name(stmt)
-        start = __column_start_position(stmt, res_class, query)
-        end = __column_end_position(query, start, res_class, name)
-
-        if __is_star(stmt):
-            patched_query.write(query[last_position:start])
-            col_parts = []
-
-            for col in column:
-                if col in patch_items:
-                    col_parts.append(f"\"{col}\"{TIMESTAMP}")
-                else:
-                    col_parts.append(f"\"{col}\"")
-
-            patched_query.write(", ".join(col_parts))
-
-            if num < len(column_list) and col_parts and query[end] != ",":
-                    patched_query.write(",")
-
-        elif column in patch_items:
-            patched_query.write(query[last_position: start])
-            column_expr = query[start:end]
-
-            if TIMESTAMP in column_expr:
-                patched_query.write(column_expr)
-            elif (
-                res_class in (ResClass.CAST, ResClass.EXPR)
-                and column_expr[0] != "("
-            ):
-                patched_query.write(f"({column_expr}){TIMESTAMP}")
-            else:
-                patched_query.write(f"{column_expr}{TIMESTAMP}")
-        else:
-            patched_query.write(query[last_position: end])
-
-        last_position = end
+        last_position = __patch_stmt(
+            patched_query, query, stmt, column, patch_items,
+            last_position, num, total,
+        )
 
     patched_query.write(query[last_position:])
     return patched_query.getvalue(), table
