@@ -265,7 +265,7 @@ class PGPackDumper(BaseDumper):
                     return self.cursor.execute(action_data)
 
                 host = self.connector.host
-                kind = get_query_kind(action_data)
+                kind = get_query_kind(action_data, self.dialect)
                 self.logger.info("Get query debug info.")
 
                 if kind not in ("Delete", "Insert", "Select", "Update"):

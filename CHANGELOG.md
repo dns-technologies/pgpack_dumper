@@ -7,6 +7,7 @@
 * Add patch_csv_timestamp() function
 * Add build wheels for manylinux aarch64
 * Add patch_csv tests
+* Improve PGPackDumper.mode_action() method
 * Update build_wheels.yml
 * Update depends base_dumper==0.3.0.dev0
 * Update depends csvpack==0.2.0.dev0
