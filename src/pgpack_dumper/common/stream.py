@@ -11,7 +11,11 @@ from pgpack.common import (
     Size,
     table_repr,
 )
-from pgpack.pgcopylib import pandas_astype
+from pgpack.pgcopylib import (
+    PGOidToDType,
+    PostgreSQLDtype,
+    pandas_astype,
+)
 from polars import Object
 
 from .reader import CopyReader
@@ -27,9 +31,10 @@ class PGPackStreamReader(PGPackReader):
     columns: list[str]
     pgtypes: list[PGOid]
     pgparam: list[PGParam]
-    pgcopy: PGCopyReader | None
+    postgres_dtype: list[PostgreSQLDtype]
     schema_overrides: dict[str, Object]
     pandas_astype: dict[str, str]
+    _reader: PGCopyReader | None
 
     def __init__(
         self,
@@ -47,15 +52,11 @@ class PGPackStreamReader(PGPackReader):
         self.columns = self.metadata.columns
         self.pgtypes = self.metadata.pgtypes
         self.pgparam = self.metadata.pgparams
-
-        try:
-            self._reader = PGCopyReader(
-                self.fileobj,
-                self.pgtypes,
-            )
-        except IndexError:
-            self._reader = None
-
+        self.postgres_dtype = [
+            PGOidToDType[self.pgtypes[column]]
+            if self.pgtypes else PostgreSQLDtype.Bytes
+            for column in range(self.num_columns)
+        ]
         self.schema_overrides = {
             column: Object
             for column, pgtype in zip(self.columns, self.pgtypes)
@@ -70,6 +71,14 @@ class PGPackStreamReader(PGPackReader):
             )
         }
         self.pandas_astype = pandas_astype(self.columns, self.postgres_dtype)
+
+        try:
+            self._reader = PGCopyReader(
+                self.fileobj,
+                self.pgtypes,
+            )
+        except IndexError:
+            self._reader = None
 
     def to_bytes(self) -> Generator[bytes, None, None]:
         """Get raw stream data."""
